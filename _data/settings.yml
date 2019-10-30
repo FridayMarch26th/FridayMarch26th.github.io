@@ -9,10 +9,8 @@ header_settings:
 
 menu_settings:
   menu_items:
-    - title: 'Projects'
+    - title: 'Work'
       url: '/'
-    - title: 'Blog'
-      url: '/blog/'
     - title: 'About'
       url: '/about'
     - title: 'Contact'
@@ -30,7 +28,7 @@ contact_settings:
 
 social_settings:
   facebook_url: ''
-  twitter_url: ''
+  twitter_url: 'https://twitter.com/FridayMarch26th'
   instagram_url: ''
   snapchat_url: ''
   youtube_url: ''
@@ -59,9 +57,9 @@ social_settings:
 color_settings:
   background_color: '#000000'
   background_alt_color: '#F5F7FA'
-  text_dark_color: '#2A2F36'
-  text_medium_color: '#6C7A89'
-  text_light_color: '#ABB7B7'
+  text_dark_color: '#ffffff'
+  text_medium_color: '#cccccc'
+  text_light_color: '#FFFFFF'
   accent_color: '#0C5DF2'
   border_color: '#dddddd'
   overlay_background_color: '#0C5DF2'
