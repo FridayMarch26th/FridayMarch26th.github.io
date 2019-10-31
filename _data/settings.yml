@@ -1,6 +1,6 @@
 basic_settings:
   site_title: Nick Wood
-  site_tagline: London-based motion op
+  site_tagline: London-based motion bod
   favicon_image: /images/favicon.png
 
 header_settings:
@@ -99,9 +99,9 @@ font_settings:
     weight: 300
     letter_spacing: 0
   h1:
-    small_size: 25
-    medium_size: 35
-    large_size: 45
+    small_size: 15
+    medium_size: 25
+    large_size: 35
     weight: 500
     letter_spacing: -0.02
     line_height: 1.2
@@ -141,9 +141,9 @@ font_settings:
     letter_spacing: 0
     line_height: 1.6
   p:
-    small_size: 16
-    medium_size: 18
-    large_size: 20
+    small_size: 14
+    medium_size: 16
+    large_size: 18
     weight: 300
     letter_spacing: 0
     line_height: 1.6

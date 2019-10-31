@@ -350,7 +350,7 @@ body.loading {
 .page {
 
 	@include mq(tabletl) {
-		padding-left: 30%;
+		padding: 0 5% 0 25%;
 	}
 }
 
