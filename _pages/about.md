@@ -13,6 +13,6 @@ A few things I'm into are: Proceduralism in a motion graphics context, procedura
 
 Having spent the majority of my career in isolation from the wider graphics community. I am intrinsically driven, easily motivated, and always looking to level up.
 
-Hit me up and let's work something out. It'll be AMAZING, I promise.
+Hit me up and let's work something out. You'll like me, I promise.
 
 nick@thiswebsite
