@@ -11,7 +11,7 @@ A few things I'm into are: Proceduralism in a motion graphics context, procedura
 
 ... That'll do for starters; though in all honesty I've a list of things to explore that grows significantly with each passing week.
 
-Having spent the majority of my career in isolation from the wider graphics community. I am intrinsically driven, easily motivated, and always looking to level up.
+I am intrinsically driven, easily motivated, and always looking to level up.
 
 Hit me up and let's work something out. You'll like me, I promise.
 
