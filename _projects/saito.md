@@ -6,7 +6,7 @@ description: Tip of the hat to greater things
 featured_image: '/images/project-saito/saito (0).jpg'
 ---
 
-So many people trying a bit of this at the moment... including me.
+Many people trying a bit of this at the moment... including me.
 
 Simple shapes, bright colours, bit o' grain, what's not to love?
 

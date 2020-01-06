@@ -8,10 +8,8 @@ featured_image: '/images/bits/robotentacles (1).jpg'
 
 ![](/images/bits/robotentacles (1).jpg)
 
-Given a loose brief of "Birth", I decided to jab a spherical egg with artifically intelligent metal pokers. Jup.
+The response to a loose brief of "Birth", for a project that was never meant to be.
 
-The resulting setup could create and animate an entire sentient cable by drawing a curve.
-
-Happy with that.
+A lot of variations along the lines of orienting things along splines. The resulting setup could create and animate an entire sentient cable with the simple drawing of a curve.
 
 There's a bit of a breakdown, [here](https://t.co/VTPoNtnO8v).

@@ -11,3 +11,5 @@ featured_image: '/images/project-noo/noo.jpg'
 In a previous life I was really into vector illustration. Definitely more of a vector bod, rather than a raster bod.
 
 I still do bits and pieces.
+
+![](/images/project-iridesse/shot_kiosks (0-00-01-06).jpg)

@@ -8,6 +8,6 @@ featured_image: '/images/bits/radeonpeel.jpg'
 
 ![](/images/bits/radeonpeel.jpg)
 
-An old bit of R&D for a project that never came off. Peering behind the surface was the idea, I guess (memories fade) to understand the power provided by component manufacturers that many never see.
+An old bit of R&D for a project that never came off. Peering behind the surface, was the idea.
 
 Simple stuff, but an execution that I really liked.
