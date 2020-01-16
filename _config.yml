@@ -13,6 +13,9 @@ collections:
   projects:
     output: true
     permalink: /project/:slug
+  doodads:
+    output: true
+    permalink: /doodad/:slug
 
 defaults:
   -
@@ -38,6 +41,12 @@ defaults:
       type: "projects"
     values:
       layout: "project"    
+  -
+    scope:
+      path: ""
+      type: "doodads"
+    values:
+      layout: "project"        
 
 markdown: kramdown
 
