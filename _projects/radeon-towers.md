@@ -3,11 +3,11 @@ title: 'Radeon Wallpapers'
 subtitle: 'Giveaway pics for fans of #teamred.'
 date: 2018-09-29 00:00:00
 description: Giveaway pics for fans of #teamred.
-featured_image: '/images/project-radeon-towers/radeon towers (1).jpg'
+featured_image: '/images/project-radeon-towers/radeontowers1.jpg'
 ---
 
 <div class="gallery" data-columns="2">
-	<img src="/images/project-radeon-towers/radeon towers (1).jpg">	
+	<img src="/images/project-radeon-towers/radeontowers1.jpg">	
 	<img src="/images/project-radeon-towers/radeon_fan_hd.jpg">	
 </div>
 
