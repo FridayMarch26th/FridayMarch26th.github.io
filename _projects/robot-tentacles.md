@@ -6,7 +6,7 @@ description: A simple excercise on orienting and sweeping.
 featured_image: '/images/bits/robotentacles (1).jpg'
 ---
 
-![](/images/bits/robotentacles (1).jpg)
+![](/images/bits/robotentacles.jpg)
 
 The response to a loose brief of "Birth", for a project that was never meant to be.
 
