@@ -1,37 +1,11 @@
 ---
-layout: default
+layout:home
 title: Home
 description: A few bits and pieces from a London-based motion bod.
-featured_image: /images/social.jpg
 ---
 
-<section class="portfolio">
-
-	<div class="content-wrap portfolio-wrap">
-
-		{% for project in site.projects reversed %}
-
-		<div class="portfolio-item">
-
-			<a class="portfolio-item__link" href="{{ project.url | relative_url }}">
-
-				<div class="portfolio-item__image">
-					<img src="{{ project.featured_image | relative_url }}" alt="{{ project.title }}">
-				</div>
-
-				<div class="portfolio-item__content">
-					<div class="portfolio-item__info">
-						<h2 class="portfolio-item__title">{{ project.title }}</h2>
-						<p class="portfolio-item__subtitle">{{ project.subtitle }}</p>
-					</div>
-				</div>
-
-			</a>
-
-		</div>
-
-		{% endfor %}
-
+<div class="content-wrap video-wrap">
+	<div class="video">
+		<iframe src="https://player.vimeo.com/video/354124420?color=ffffff&title=0&byline=0&portrait=0" width="640" height="360" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
 	</div>
-
-</section>
+</div>

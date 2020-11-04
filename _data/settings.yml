@@ -1,6 +1,6 @@
 basic_settings:
   site_title: Nick Wood
-  site_tagline: London-based motion bod
+  site_tagline: 3D Artist and motion bod!
   favicon_image: /images/favicon.png
 
 header_settings:
@@ -9,6 +9,8 @@ header_settings:
 
 menu_settings:
   menu_items:      
+    - title: 'Projects'
+      url: '/projects'  
     - title: 'About'
       url: '/about'      
 
