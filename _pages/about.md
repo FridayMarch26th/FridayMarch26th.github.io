@@ -3,9 +3,9 @@ title: About Me
 subtitle: In a nutshell? I REALLY like computer graphics. :)
 ---
 
-I can't stress that enough.
+In a nutshell? I REALLY like computer graphics. :)
 
-I'm a generalist graphics bod with over fifteen year's experience covering a wide base of different disciplines and working for a large assortment of companies including LG, Intel, AMD, Innocent Drinks, and Samsung. 
+I'm a generalist graphics bod with over fifteen years' experience covering a wide base of different disciplines and working for a large assortment of companies including LG, Intel, AMD, Innocent Drinks, and Samsung. 
 
 Around four years ago I decided to focus on my principle area of interest - 3D, and a wee while ago I decided to jump from a long stint at a single studio to a freelance career.
 
