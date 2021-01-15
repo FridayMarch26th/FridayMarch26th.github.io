@@ -1,7 +1,7 @@
 site: nickwood.io
 
 url: https://www.nickwood.io
-baseurl: 
+baseurl:
 
 collections:
   pages:
