@@ -7,6 +7,8 @@ I'm currently gainfully employed as a 3D artist at Territory Studio in London.
 
 I love solving problems with computers, principally with Houdini, and I've been in the industry for quite a while.
 
+Everyone loves a nice visual, absolutely, but as time passes I'm as happy digging into process as I am looking at an end result.
+
 My free time is spent either with my family, or making up for not giving adolescent math class my full attention.
 
 I occaisionally post things on [Twitter](https://twitter.com/FridayMarch26th), in an effort to contribute to the CG community.
