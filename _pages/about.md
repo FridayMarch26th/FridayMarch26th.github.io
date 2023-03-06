@@ -5,7 +5,7 @@ subtitle: Long time CG enthusiast.
 
 I'm currently gainfully employed as a 3D artist at Territory Studio in London.
 
-I love solving problems with computers, principally with Houdini, and I've been in the industry for around twenty years.
+I love solving problems with computers, principally with Houdini, and I've been in the industry for quite a while.
 
 My free time is spent either with my family, or making up for not giving adolecent math class my full attention.
 
