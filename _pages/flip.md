@@ -1,35 +1,10 @@
 ---
-layout: default
 title: Flip notes
 description: Just so's I remember
 ---
-<section class="portfolio">
+Fluid surface - Vorticity
 
-	<div class="content-wrap portfolio-wrap">
+Fluid lady 2023 video 1 - 3 mewters small scale flip.
+ST 48000 on the FLIP masterclass.
 
-		{% for project in site.projects reversed %}
-
-		<div class="portfolio-item">
-
-			<a class="portfolio-item__link" href="{{ project.url | relative_url }}">
-
-				<div class="portfolio-item__image">
-					<img src="{{ project.featured_image | relative_url }}" alt="{{ project.title }}">
-				</div>
-
-				<div class="portfolio-item__content">
-					<div class="portfolio-item__info">
-						<h2 class="portfolio-item__title">{{ project.title }}</h2>
-						<p class="portfolio-item__subtitle">{{ project.subtitle }}</p>
-					</div>
-				</div>
-
-			</a>
-
-		</div>
-
-		{% endfor %}
-
-	</div>
-
-</section>
+FlipSOP turn of ST blur for nicer reuslts.
