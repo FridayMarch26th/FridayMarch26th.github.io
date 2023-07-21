@@ -17,3 +17,7 @@ llimits collision add collision source and volume
 Hit the foam tab for the main things that drive the look.
 
 Constraint stiffness for nicer shapes without flyaway particles.
+
+Erosion - nice die away.
+Repelant - Juri doesn't like that.
+Adhesion project to asurface.
