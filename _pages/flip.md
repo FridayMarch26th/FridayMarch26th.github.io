@@ -15,3 +15,5 @@ Whiteeater source
 llimits collision add collision source and volume
 --bouyancy how fast particles under teh water rize to the surface
 Hit the foam tab for the main things that drive the look.
+
+Constraint stiffness for nicer shapes without flyaway particles.
