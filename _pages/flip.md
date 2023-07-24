@@ -21,3 +21,10 @@ Constraint stiffness for nicer shapes without flyaway particles.
 Erosion - nice die away.
 Repelant - Juri doesn't like that.
 Adhesion project to asurface.
+
+Alehandro surface tension - Actually straightforward to understand
+mean curvature
+
+Whitewater masterclass - Includes a vortex
+
+Boundarys
