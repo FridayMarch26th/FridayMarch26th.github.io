@@ -32,6 +32,9 @@ Flip comes with problems. THe edges of teh domain create reflections, the bounda
 
 Masterclass 16 - 4:21 Waterline "Anything above the waterline can leae" "anything below the watelrine is cotaniend"
 
+Boundary layer is much more advanced version of water;line.
+Scripted velocity at the volume limits - in fow and outflow
+
 https://www.sidefx.com/forum/topic/56732/
 
 FLIP SURFACING MASKING!
