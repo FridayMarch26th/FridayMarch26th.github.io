@@ -29,3 +29,5 @@ Whitewater masterclass - Includes a vortex
 
 Boundarys
 Flip comes with problems. THe edges of teh domain create reflections, the boundary layers allow particles to leave the sim, and maintain velocity.
+
+https://www.sidefx.com/forum/topic/56732/
