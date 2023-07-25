@@ -38,3 +38,5 @@ Scripted velocity at the volume limits - in fow and outflow
 https://www.sidefx.com/forum/topic/56732/
 
 FLIP SURFACING MASKING!
+
+Surface extrapolation - mimic adhesion? More interesting splashes with low vlaues.
