@@ -1,5 +1,7 @@
 A while ago I completed a project that involved the development of high-resolution world maps. These maps used publically available DEM and weather data, and these notes discuss some strategies I developed to deal with that data.
 
+Unfortauntely, it was a project that disappeared before compulation, so the final render was never realised, but enough reasearch was conduct to produce some worthwhile notes.
+
 It's worth noting that some of the strategies are somewhat specific to Arnold, which we used in production; though I've included them here because similar hurdles would need to be overcome regardless of chosen render.
 
 Digital Elevation Model DEM
@@ -41,6 +43,23 @@ So I didn't actually get beyond a few preliminary tests at using the Aster data 
 
 
 WIND VECTORS
+
+Another aspect of the (project was to be the rendering of realistic cloud data). Again, a source of publicically avoiding real world weather data proved of interest. This site was offered to me as a useful resource:
+
+Inspecting the source odf this website took me to the proect's Github page, which in turn led me to the following archive of weather information. It's a little overwhelmeing, but after staring at it for a bit I managed to grasp what I need:
+
+GRB files are gridded binary files... I've know idea eaxactly what that means, but I d know that it's not JOSN, XML, or any other easily interpreted text format. So step one was to translate the GRB files into something I could read into Houdini. 
+
+It turns out that there are more commandline tool savailable to convert these GRB fiels to JSON. Unforateunyl, this tools are Linux only and don't come as a compiled binary. To cut a long story short, becaseu the detail is way beyondf the scope of a few crib notes, I had to spin up a Linux vertual machine using a piece of software that I was familiar with from a former involvemtn with web development. Vagrant. Using vagrant you can effectively create a computer within a computer, for me it enabled the running of a Linux box inside a windows box, and a box that I can use and distory at the drop of a hat.
+
+On compilation of the ECC tools, I found a very handy guide that removed any thinking:
+
+With all that done, I was able to convert the entirely opaquwe GRB file, into a very transparent JSON file to read inside HOUDINI.
+
+I then had to remap that data, as before with the DEM data, but using a fresh set of tricks given the different underring data. The result of that, wind vector data in HOUDINI!
+
+On rendering. I thought of a few different approaches to rendering planetary clouds, and in the end I selected remapping a 2D pyro solution to a sphere. From a simulation POV this is far faster than anything in 3D, and ultimately we're skimming the outer surface from a potentially expensive 3D pyro sim, and while it comes with obvious distortion aroundf the poles, for the shots considered in proudction this didn't matter to uys. So much better to fly through. So not a universal solution, but a fast one that worked wewll within prodeuction constraints.
+
 Discuss solutions. 2D speed, 3D with colliders, 2D pops to attrib to volume.
 NOMAD
 https://nomads.ncep.noaa.gov/
