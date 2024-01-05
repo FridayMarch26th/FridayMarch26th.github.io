@@ -1,7 +1,9 @@
 ---
 title: World Maps
-subtitle: Some production notes
+subtitle: Rough production notes
 ---
+
+##Intro
 
 A while ago I began to research a project based around high-resolution world maps. Dramatic camera work was planned, with the camera plummeting from outerspace to a few kilometers away from the earth's surface.
 
