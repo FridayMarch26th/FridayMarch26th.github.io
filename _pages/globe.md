@@ -2,15 +2,18 @@
 title: World Maps
 subtitle: Rough production notes
 ---
-
 ## Intro
+A while ago I began to research a project based around high-resolution world maps.
 
-A while ago I began to research a project based around high-resolution world maps. Dramatic camera work was planned, with the camera plummeting from outerspace to a few kilometers away from the earth's surface.
+Cameras were planned to sit anywhere from outerspace, to a few kilometers away from the Earth's surface. 
 
 I was tasked with looking at solutions for 3D topographic detail, and planetary clouds.
 
-Unfortauntely it's a project that never came to fruition, so we never reached the final frame, but enough work was completed to warrent some notes. It's also rare that encounter a contribution that isn't tedious social media banter, and with that perhaps bits of the following will be useful to a future someone.
+Unfortauntely it's a project that never came to fruition, so we never reached the final frame, but enough work was completed to warrent some notes.
 
+It's also rare that encounter a contribution that isn't tedious social media banter, and with that perhaps bits of the following will be useful to a future someone.
+
+## Arnold?
 Also, it's worth mentioning that some of the notes are specific to Arnold, being the render that would be used in prodction, but I've included them here because similar hurdles might need to be overcome regardless of renderer.
 
 
