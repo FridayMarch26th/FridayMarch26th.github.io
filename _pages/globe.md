@@ -13,19 +13,19 @@ Unfortauntely it's a project that never came to fruition, so we never reached th
 
 It's also rare that encounter a contribution that isn't tedious social media banter, and with that perhaps bits of the following will be useful to a future someone.
 
-## Arnold?
+### Arnold
 Also, it's worth mentioning that some of the notes are specific to Arnold, being the render that would be used in prodction, but I've included them here because similar hurdles might need to be overcome regardless of renderer.
 
 
-Topographic Detail - Digital Elevation Model - DEM
+## Topographic Detail - Digital Elevation Model - DEM
 
-A helpful colleague pointed me toward DEM data sets that are available from the NASA website. They are essentially series of image tiles sourced from satelites scanning the globe at regular intervals. These can be used to drive displacement. One particular set offered a level of quality that satisfied the production resolution given the proximity of the camera to the earth's surface:
+A helpful colleague pointed me toward DEM datasets that are available from the NASA website. 
 
-https://search.earthdata.nasa.gov/search/granules?p=C1711961296-LPCLOUD&pg[0][v]=f&pg[0][gsk]=-start_date&fi=ASTER&tl=1703889672.142!3!!
+They are series of image tiles sourced from satelites scanning the globe at regular intervals, and can be used to drive displacement. (One particular set)[https://search.earthdata.nasa.gov/search/granules?p=C1711961296-LPCLOUD&pg[0][v]=f&pg[0][gsk]=-start_date&fi=ASTER&tl=1703889672.142!3!!] offered a level of quality that satisfied the production resolution given the proximity of the camera to the Earth's surface:
 
-What a resource! But also, we've just downloaded shy of 23k images and around 400GB of data. Yowza.
+What a resource! BUT, we've just downloaded shy of 23k images and around 400GB of data. Yowza.
 
-REMAPPING
+### REMAPPING PRIMS
 A lot of the work requires mapping one set of values (the image filenames) to another (a grid of primitives). This is broadly trivial, but any remapping requires a unique set of tricks to transform the input values into meaningful output.
 
 Latitude and longitude are a set of coordinates that begin at the intersection between the prime meridian and the equator, extending vertically between the poles from -90 to 90, and horizontally around the equator between 0 and 360.
