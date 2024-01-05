@@ -1,3 +1,8 @@
+---
+title: World Maps
+subtitle: Some production notes
+---
+
 A while ago I began to research a project based around high-resolution world maps. Dramatic camera work was planned, with the camera plummeting from outerspace to a few kilometers away from the earth's surface.
 
 I was tasked with looking at solutions for 3D topographic detail, and planetary clouds.
