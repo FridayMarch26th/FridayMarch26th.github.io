@@ -11,13 +11,15 @@ Everyone loves a nice visual, absolutely, but as time passes I'm as happy diggin
 
 I'm practically focussed, but I'm not averse to leading a team or helping others to reach their goals. I love talking shop and figuring out a plan of attack.
 
-A given week might include coding particle behavior, easing animation curves, finding ways to distribute the format conversion of 20,000 images, getting nostalgic about vector illustration, or automating the splitting 40k texture maps into UDIM tiles for handing off to Nuke. I quite like Nuke. And colour management. And all sorts of other things. One morning not so long ago I picked up Maya for the first time in a while, before writing a shader conversion tool with Python for the following morning.
+A given week might include coding particle behavior and easing animation curves, or finding ways to distribute the format conversion of 20,000 images and automating the splitting of 40k texture maps into UDIM tiles for handing off to Nuke.
 
-I may even return to the web one day, if it'll have me. The last thing I wrote was a React app when React was a fresh new thing. How time flies.
+Nuke is neat, as is colour management. One morning not so long ago I picked up Maya for the first time in a while, before writing a shader conversion tool with Python for the following morning.
+
+I had one foot in the web for a long while, both in the front and back end. Silky smooth Flash UIs with tiny fonts were all the rage for a bit, which seems so niave now but in the same breath probably played a significant part in what "creative coding" is now. Database design? I've tried that too, when I've had to. I may even return to the web one day, if it'll have me. The last thing I wrote was a React app when React was a fresh new thing. How time flies.
 
 So if I don't know it today, I'll learn it by tomorrow.
 
-My free time is spent either with my family, baking bread, making up for not giving adolescent math class my full attention.
+My free time is spent either with my family, baking bread, or making up for not giving adolescent math class my full attention.
 
 I occaisionally post things on [Twitter](https://twitter.com/FridayMarch26th), in an effort to contribute to the CG community.
 
