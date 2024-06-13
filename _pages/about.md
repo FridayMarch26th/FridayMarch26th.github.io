@@ -15,7 +15,7 @@ A given week might include coding particle behavior and easing animation curves,
 
 Nuke is neat, as is colour management. One morning not so long ago I picked up Maya for the first time in a while, before writing a shader conversion tool with Python for the following morning.
 
-I had one foot in the web for a long while, both in the front and back end. Silky smooth Flash UIs with tiny fonts were all the rage for a bit, which seems so niave now but in the same breath probably played a significant part in what "creative coding" is now. Database design? I've tried that too, when I've had to. I may even return to the web one day, if it'll have me. The last thing I wrote was a React app when React was a fresh new thing. How time flies.
+I had one foot in the web for a long while, both in the front and back end. Highly animated Flash UIs with tiny fonts were all the rage for a bit, which seems so niave now but in the same breath all the noodling probably played a significant part in what creative coding is today. Database design? I've tried that too, when I've had to. I may even return to the web one day, if it'll have me. The last thing I wrote was a React app when React was a fresh new thing. How time flies.
 
 So if I don't know it today, I'll learn it by tomorrow.
 
