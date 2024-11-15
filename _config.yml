@@ -9,10 +9,7 @@ collections:
     permalink: /:name
   posts:
     output: true
-    permalink: /blog/:slug
-  doodads:
-    output: true
-    permalink: /doodad/:slug
+    permalink: /posts/:slug
 
 defaults:
   -
@@ -31,13 +28,7 @@ defaults:
       path: ""
       type: "posts"
     values:
-      layout: "post"
-  -
-    scope:
-      path: ""
-      type: "doodads"
-    values:
-      layout: "project"        
+      layout: "item"     
 
 markdown: kramdown
 

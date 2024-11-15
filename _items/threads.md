@@ -3,8 +3,8 @@ title: Bits and pieces
 subtitle: Was either this or the bin.
 ---
 
-![rnd](/images/bits/page_08_v009.jpg)
+![rnd](/images/threads/page_08_v009.jpg)
 
-![rnd](/images/bits/page_06_v009.jpg)
+![rnd](/images/threads/page_06_v009.jpg)
 
 Some lighting and lookdev on images promoting the convergence of AI and humanity. Rendered with Arnold because of all those tiny hairs. Nodes of the day are exponential glow, chromatic, halation, and advanced grain - Cheers Sid, wherever you are now.
