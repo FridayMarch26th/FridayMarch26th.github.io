@@ -7,4 +7,4 @@ subtitle: Was either this or the bin.
 
 ![Rnd](/images/bits/page_06_v009.jpg)
 
-Some lighting and lookdev on some images promiting the convergence of AI and humanity. Rendered with Arnold because of all those tiny hairs. bit of post in Nuke. Nodes of the day are exponential glow, chromatic, halation, and advanced grain. Cheers Sid, wherever you are now.
+Some lighting and lookdev on images promoting the convergence of AI and humanity. Rendered with Arnold because of all those tiny hairs. Nodes of the day are exponential glow, chromatic, halation, and advanced grain - Cheers Sid, wherever you are now.
