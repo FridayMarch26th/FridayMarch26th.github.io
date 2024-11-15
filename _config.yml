@@ -9,7 +9,7 @@ collections:
     permalink: /:name
   posts:
     output: true
-    permalink: /posts/:slug
+    permalink: /blog/:slug
 
 defaults:
   -
@@ -28,7 +28,7 @@ defaults:
       path: ""
       type: "posts"
     values:
-      layout: "item"     
+      layout: "post"     
 
 markdown: kramdown
 
