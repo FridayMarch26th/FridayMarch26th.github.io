@@ -1,9 +1,9 @@
 ---
-title: 'Paul Clements inspired growth doodad'
-subtitle: 'Procedural blobz.'
+title: Paul Clements inspired growth doodad
+subtitle: Procedural blobz.
 date: 2018-09-27 00:00:00
 description: A piece of work from a friend that I wanted to reproduce.
-featured_image: '/images/project-clements/clements1.jpg'
+featured_image: /images/project-clements/clements1.jpg
 ---
 
 ![](/images/project-clements/clements1.jpg)
