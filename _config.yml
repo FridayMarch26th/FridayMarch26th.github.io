@@ -10,9 +10,6 @@ collections:
   posts:
     output: true
     permalink: /blog/:slug
-  projects:
-    output: true
-    permalink: /project/:slug
   doodads:
     output: true
     permalink: /doodad/:slug
@@ -35,12 +32,6 @@ defaults:
       type: "posts"
     values:
       layout: "post"
-  -
-    scope:
-      path: ""
-      type: "projects"
-    values:
-      layout: "project"    
   -
     scope:
       path: ""
