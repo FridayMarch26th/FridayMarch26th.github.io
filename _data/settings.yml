@@ -12,7 +12,7 @@ menu_settings:
     - title: 'About'
       url: '/about'      
     - title: 'Posts'
-      url: '/Posts'      
+      url: '/posts'      
 
 grid_settings:
   overlay_opacity: 0.8
