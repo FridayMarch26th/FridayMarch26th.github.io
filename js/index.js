@@ -146,9 +146,9 @@
 			});
 
 			// Blog grid layout
-			$('.bits-wrap').imagesLoaded( function() {
-				$('.bits-wrap').masonry({
-					itemSelector: '.bit',
+			$('.blog-wrap').imagesLoaded( function() {
+				$('.blog-wrap').masonry({
+					itemSelector: '.blog-post',
 					transitionDuration: 0
 				});
 			});
