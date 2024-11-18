@@ -10,6 +10,9 @@ collections:
   posts:
     output: true
     permalink: /posts/:slug
+  tech:
+    output: true
+    permalink: /tech/:slug    
 
 defaults:
   -
