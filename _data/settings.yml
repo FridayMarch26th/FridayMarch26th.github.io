@@ -52,7 +52,7 @@ color_settings:
   text_dark_color: '#ffffff'
   text_medium_color: '#cccccc'
   text_light_color: '#FFFFFF'
-  accent_color: '#0C5DF2'
+  accent_color: '#333333'
   border_color: '#dddddd'
   overlay_background_color: '#aaaaaa'
   overlay_text_color: '#ffffff'
