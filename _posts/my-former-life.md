@@ -1,15 +1,16 @@
 ---
-title: 'Vector bits'
-subtitle: 'I was a graphic designer in a former life.'
-date: 2018-07-30 00:00:00
+title: 'Old'
+subtitle: 'A bunch of old things.'
+date: 2017-07-30 00:00:00
 description: A long while ago now I was a graphic designer into Adobe Illustrator.
-featured_image: '/images/project-noo/noo.jpg'
+featured_image: '/images/radeonpeel.jpg'
 ---
 
-![](/images/project-noo/noo.jpg)
+Because I can't quite bring myself to take these down.
 
-In a previous life I was really into vector illustration. Definitely more of a vector bod, rather than a raster bod.
-
-I still do bits and pieces.
-
-![](/images/project-iridesse/shot_kiosks (0-00-01-06).jpg)
+![Peel](/images/radeonpeel.jpg)
+![Tentacles](/images/robotentacles.jpg)
+![Bubble Shirts](/images/shirts_3.jpg)
+![Toonshaded spirals](/images/toon_spirals.arnold.jpg)
+![Bamboo](/images/bamboo.jpg)
+![I used to like vector illustration](/images/noo.jpg)
