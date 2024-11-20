@@ -16,6 +16,7 @@ featured_image: assets/towers/feature_tower.jpg
 
 ![Radeon Towers](/assets/radeon-towers/radeon_chips_4k_00004.jpg)
 
+Possibly the first significant thing I ever did in Houdini.
 
 
 
