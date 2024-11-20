@@ -1,7 +1,7 @@
 ---
 title: Towers
 subtitle: Wallpapers to promote the launch of an AMD GPU.
-featured_image: assets/towers/feature_tower.jpg
+featured_image: assets/radeon-towers/feature_tower.jpg
 ---
 
 ![Radeon Towers](/assets/radeon-towers/radeon_chips_4k_00005.jpg)
