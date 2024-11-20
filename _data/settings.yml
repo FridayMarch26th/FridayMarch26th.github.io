@@ -1,7 +1,7 @@
 basic_settings:
   site_title: Nick Wood
   site_tagline: Houdini Artist!
-  favicon_image: /images/favicon.png
+  favicon_image: /assets/favicon.png
 
 header_settings:
   logo_image: 
