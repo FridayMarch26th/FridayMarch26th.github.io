@@ -6,10 +6,10 @@ featured_image: /images/social.jpg
 ---
 
 <section class="blog">
-
+    Test
 	<div class="content-wrap blog-wrap">
 
-		{% for note in tech.notes %}
+		{% for note in site.tech %}
 
 		<article class="blog-post">
 
