@@ -6,6 +6,7 @@ description: My version of something I saw once.
 featured_image: /assets/tech/constraints.gif
 ---
 
+![Screengrab](/assets/tech/constraints.gif)
 
 ᴍᴀᴛᴛɪᴀꜱ ᴍᴀʟᴍᴇʀ
 @3Dmattias
