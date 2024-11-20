@@ -3,7 +3,7 @@ title: Constraints
 subtitle: I totally did not know that a SopSolver with multiple outputs was right there.
 date: 2018-09-27 00:00:00
 description: My version of something I saw once.
-featured_image: /assets/tech/clements1.jpg
+featured_image: /assets/tech/constraints.gif
 
 
 
