@@ -15,4 +15,4 @@ v@dir[int(r.x * 3)] = r.y < 0.5 ? -1 : 1;
 
 int points[] = expandpointgroup(0, sprintf("* ^@startCode!=%s ^@destCode!=%s", s@destCode, s@startCode));
 
-Plum the google notes stuff
+Plum the google notes
