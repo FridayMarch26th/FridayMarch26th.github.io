@@ -31,7 +31,13 @@ defaults:
       path: ""
       type: "posts"
     values:
-      layout: "posts"     
+      layout: "posts" 
+  -
+    scope:
+      path: ""
+      type: "tech"
+    values:
+      layout: "posts"            
 
 markdown: kramdown
 
