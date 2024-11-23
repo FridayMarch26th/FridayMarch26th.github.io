@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Tech notes
+title: Notes
 description: 
 featured_image: /images/social.jpg
 ---
