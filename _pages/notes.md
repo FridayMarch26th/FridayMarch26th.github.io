@@ -8,7 +8,7 @@ featured_image: /images/social.jpg
 <section class="blog">
 	<div class="content-wrap blog-wrap">
 
-		{% for note in site.tech %}
+		{% for note in site.notes %}
 
 		<article class="blog-post">
 
