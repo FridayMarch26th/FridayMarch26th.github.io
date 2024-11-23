@@ -9,7 +9,7 @@ collections:
     permalink: /:name
   posts:
     output: true
-    permalink: /pics/:slug
+    permalink: /posts/:slug
   tech:
     output: true
     permalink: /tech/:slug    
@@ -29,7 +29,7 @@ defaults:
   -
     scope:
       path: ""
-      type: "pics"
+      type: "posts"
     values:
       layout: "posts" 
   -
