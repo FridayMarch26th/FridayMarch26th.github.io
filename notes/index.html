@@ -9,12 +9,10 @@ featured_image: /images/social.jpg
 
 	<div class="content-wrap blog-wrap">
 
-		{% for post in site.notes %}
+		{% for note in site.notes %}
 
 		<article class="blog-post">
-
-			<a class="blog-post__link" href="{{ note.url | relative_url }}">
-
+Test
 				<div class="blog-post__image">
 					<img src="{{ note.featured_image | relative_url }}" alt="{{ note.title }}">
 				</div>
