@@ -3,7 +3,7 @@ title: Constraints
 subtitle: I totally did not know that a SopSolver with multiple outputs was right there.
 date: 2018-09-27 00:00:00
 description: Handy Shortcut
-featured_image: /assets/techfeature_constraints.jpg
+featured_image: /assets/notes/feature_constraints.jpg
 ---
 
 ![Screengrab](/assets/tech/constraints.gif)
