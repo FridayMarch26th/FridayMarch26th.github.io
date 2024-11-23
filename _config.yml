@@ -12,7 +12,7 @@ collections:
     permalink: /posts/:slug
   tech:
     output: true
-    permalink: /tech/:slug    
+    permalink: /notes/:slug    
 
 defaults:
   -
@@ -35,7 +35,7 @@ defaults:
   -
     scope:
       path: ""
-      type: "tech"
+      type: "notes"
     values:
       layout: "posts"            
 
@@ -53,5 +53,5 @@ plugins:
   - jekyll-sitemap
 
 paginate: 6
-paginate_path: "/pics/page:num/"
+paginate_path: "/posts/page:num/"
   
