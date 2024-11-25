@@ -37,7 +37,12 @@ defaults:
       path: ""
       type: "notes"
     values:
-      layout: "posts"            
+      layout: "posts"
+  -
+    scope:
+      path: "/maths"
+    values:
+      layout: "posts"                  
 
 markdown: kramdown
 
