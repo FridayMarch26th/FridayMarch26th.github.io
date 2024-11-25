@@ -142,7 +142,7 @@
 		left: 0;
 		width: 100%;
 		height: 3px;
-		@include transition(all 0.1s);
+		//@include transition(all 0.1s);
 		background: $text-dark-color;
 	}
 
@@ -191,7 +191,7 @@
 
 	visibility: hidden;
 	opacity: 0;
-	@include transition(all 0.2s ease-in-out);
+	//@include transition(all 0.2s ease-in-out);
 
 	@include mq(tabletl) {
 		position: relative;

@@ -53,7 +53,7 @@
 
 	opacity: 0;
 	visibility: hidden;
-	@include transition(all 0.2s ease-in-out);
+	@include transition(opacity 0.2s ease-in-out);
 }
 
 .blog-post__info {
