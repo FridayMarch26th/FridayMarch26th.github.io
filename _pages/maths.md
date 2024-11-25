@@ -15,4 +15,9 @@ A random collection of mathematical resources that I've found useful over recent
 
 [Why does factoring by group ing work?](https://www.youtube.com/watch?v=cOIxv1ybPro&list=LL&index=67)
 
+These are *so* good. The presentation may not be to be to some peoples' taste, but the content is excellent.
+
 [Algebra 1 - Defining Sets](https://www.youtube.com/watch?v=GYlhVuGBl5E&list=PL20023FA07684B937)
+
+Bridging the cap between algebra and geometry...
+[Cartesian Products, Ordered Pairs and Triples](https://www.youtube.com/watch?v=l4j4XgVbuxc&list=PL20023FA07684B937&index=9)
