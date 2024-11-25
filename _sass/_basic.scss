@@ -194,7 +194,7 @@ a {
 	text-decoration: none;
 	color: $text-dark-color;
 	font-weight: $bold-weight;
-	@include transition(all 0.15s ease-in-out);
+	@include transition(opacity 0.15s ease-in-out);
 
 	&:hover {
 		color: $accent-color;
@@ -296,7 +296,7 @@ hr {
 }
 
 .page {
-	@include transition(all 0.6s cubic-bezier(.87,-.41,.19,1.44));
+	@include transition(opacity 0.6s cubic-bezier(.87,-.41,.19,1.44));
 }
 
 body.loading {
@@ -304,20 +304,20 @@ body.loading {
 	.loader {
 		opacity: 1;
 		visibility: visible;
-		@include transition(all 0.4s ease-in-out 1s);
+		@include transition(opacity 0.4s ease-in-out 1s);
 	}
 
 	.page {
 		opacity: 0;
 		visibility: hidden;
-		@include transition(all 0.4s ease-in-out, transform 0s ease-in-out 0.4s);
+		@include transition(opacity 0.4s ease-in-out, transform 0s ease-in-out 0.4s);
 		@include translate(0,20px);
 	}
 
 	.footer {
 		opacity: 0;
 		visibility: hidden;
-		@include transition(all 0.4s ease-in-out);
+		@include transition(opacity 0.4s ease-in-out);
 	}
 }
 
@@ -331,7 +331,7 @@ body.loading {
 
 	opacity: 0;
 	visibility: hidden;
-	@include transition(all 0.2s ease-in-out);
+	@include transition(opacity 0.2s ease-in-out);
 
 	svg {
 		width: 100%;
@@ -449,7 +449,7 @@ section {
 	line-height: 1;
 	white-space: nowrap;
 
-	@include transition(all 0.15s ease-in-out);
+	@include transition(opacity 0.15s ease-in-out);
 	@include translate(0,20px);
 	opacity: 0;
 
