@@ -1,7 +1,8 @@
 ---
 layout: default
 title: Maths
-description: Just some useful things. 
+description: Just some useful things
+layout: post
 featured_image: /images/social.jpg
 ---
 

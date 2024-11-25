@@ -31,18 +31,13 @@ defaults:
       path: ""
       type: "posts"
     values:
-      layout: "posts" 
+      layout: "post" 
   -
     scope:
       path: ""
       type: "notes"
     values:
-      layout: "posts"
-  -
-    scope:
-      path: "maths"
-    values:
-      layout: "posts"                  
+      layout: "post"            
 
 markdown: kramdown
 
