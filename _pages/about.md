@@ -31,7 +31,6 @@ Cheers.
 
 nick@thiswebsite
 
-London, E7 
-+44(0)7968 303 828
+London, E7
 https://www.nickwood.io/
 Twitter: @FridayMarch26th
