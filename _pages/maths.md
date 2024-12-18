@@ -25,3 +25,9 @@ These are *so* good. The presentation may not be to be to some peoples' taste, b
 
 Bridging the cap between algebra and geometry...
 [Cartesian Products, Ordered Pairs and Triples](https://www.youtube.com/watch?v=l4j4XgVbuxc&list=PL20023FA07684B937&index=9)
+
+A great description of what trig reference angles are...
+[Reference angles](https://www.quora.com/Why-do-we-use-reference-angles-instead-of-finding-the-value-of-trig-function-of-an-original-angle-in-trigonometry-Can-you-explain-it-in-unit-circle)
+
+So *that's* what sine and consine are...
+[Eddie Woo talks unit circles](https://youtu.be/gUdksdjuSCk?si=25dAPcXV9DvR14QA)
