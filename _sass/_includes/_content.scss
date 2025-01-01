@@ -92,11 +92,11 @@
 		}
 
 		@include mq(tabletl) {
-			max-width: 70%;
+			max-width: 100%;
 		}
 
 		@include mq(laptop) {
-			max-width: 65%;
+			max-width: 100%;
 		}
 	}
 
