@@ -55,7 +55,7 @@ This is neat, even point distributions on a sphere...
 
 My favourite run down of the six trig functions...
 
-(All Trig Functions on the Unit Circle )[https://www.youtube.com/watch?v=LNBZ0bP4SHk]
+[All Trig Functions on the Unit Circle)(https://www.youtube.com/watch?v=LNBZ0bP4SHk)
 
 ---
 
