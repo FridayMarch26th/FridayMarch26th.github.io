@@ -7,6 +7,8 @@ featured_image: /images/social.jpg
 ---
 A random collection of mathematical resources that I've found useful over recent times. The production values vary wildly, but bite on a stick and keep watching, what connects everything is the clear communication of interesting things.
 
+---
+
 [IXL Algebra 1 CC.7 Exponential functions over unit intervals](https://www.youtube.com/watch?v=GT9slOHJUT0&lc=UgxmcQiob8tQ3AbNfr54AaABAg)
 
 ---
