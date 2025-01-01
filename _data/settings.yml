@@ -53,7 +53,7 @@ color_settings:
   text_medium_color: '#cccccc'
   text_light_color: '#FFFFFF'
   accent_color: '#333333'
-  border_color: '#dddddd'
+  border_color: '#333333'
   overlay_background_color: '#aaaaaa'
   overlay_text_color: '#ffffff'
   overlay_accent_color: '#aaaaaa'
