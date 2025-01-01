@@ -45,8 +45,8 @@ My favourite run down of the six trig functions...
 
 Eddie Woo does it again, nice run down of why the sine rule works. Interesting geometric constructions used to prove a point...
 
-(The Sine Rule)[https://www.youtube.com/watch?v=SmkT4QiYW6M]
+[]The Sine Rule](https://www.youtube.com/watch?v=SmkT4QiYW6M)
 
 Similarly...
 
-(Angles in the same segment)[https://www.youtube.com/watch?v=NX4v_D1t0rI]
+(Angles in the same segment](https://www.youtube.com/watch?v=NX4v_D1t0rI)
