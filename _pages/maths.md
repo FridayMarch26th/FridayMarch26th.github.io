@@ -15,7 +15,7 @@ A random collection of mathematical resources that I've found useful over recent
 
 [Why does factoring by grouping work?](https://www.youtube.com/watch?v=cOIxv1ybPro&list=LL&index=67)
 
-These MyWhyU videos are excellent. The presentation may not be to be to some peoples' taste (I like it!), but the explanationsd are top drawer.
+These MyWhyU videos are excellent...
 
 [Algebra 1 - Defining Sets](https://www.youtube.com/watch?v=GYlhVuGBl5E&list=PL20023FA07684B937)
 
