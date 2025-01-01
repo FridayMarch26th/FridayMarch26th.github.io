@@ -9,7 +9,11 @@ A random collection of mathematical resources that I've found useful over recent
 
 [IXL Algebra 1 CC.7 Exponential functions over unit intervals](https://www.youtube.com/watch?v=GT9slOHJUT0&lc=UgxmcQiob8tQ3AbNfr54AaABAg)
 
+---
+
 [Radical Expressions and Absolute Value](https://www.youtube.com/watch?v=PH3I8wOt1Zc&lc=Ugz075K3Xz7wZSieL2B4AaABAg)
+
+---
 
 [A visual proof for the difference of squares](https://www.youtube.com/watch?v=wIPGEVCOzJ4&lc=Ugw0H_O05RVao47e_f14AaABAg)
 
