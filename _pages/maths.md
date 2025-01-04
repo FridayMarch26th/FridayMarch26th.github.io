@@ -55,7 +55,7 @@ This is neat, even point distributions on a sphere...
 
 My favourite run down of the six trig functions...
 
-[All Trig Functions on the Unit Circle)(https://www.youtube.com/watch?v=LNBZ0bP4SHk)
+[All Trig Functions on the Unit Circle](https://www.youtube.com/watch?v=LNBZ0bP4SHk)
 
 ---
 
@@ -68,3 +68,9 @@ Eddie Woo does it again, nice run down of why the sine rule works. Interesting g
 Similarly...
 
 [Angles in the same segment](https://www.youtube.com/watch?v=NX4v_D1t0rI)
+
+---
+
+Lovely proof of the cosine rule...
+
+[Visual cosine rule rule](https://youtu.be/vNCe7ciFwVc?si=rTQTsfxKJShoX_g2)
