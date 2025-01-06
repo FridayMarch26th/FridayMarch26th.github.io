@@ -71,6 +71,9 @@ Similarly...
 
 ---
 
-Lovely proof of the cosine rule...
+Lovely proofs of the cosine rule...
 
-[Visual cosine rule rule](https://youtu.be/vNCe7ciFwVc?si=rTQTsfxKJShoX_g2)
+[Visual cosine rule #1](https://youtu.be/vNCe7ciFwVc?si=rTQTsfxKJShoX_g2)
+
+[Visual cosine rule #2]
+(https://youtu.be/ZAx3Sw85v00?si=1RswQyi1vCKJCiSw)
