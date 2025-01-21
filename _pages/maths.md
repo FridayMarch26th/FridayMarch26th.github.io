@@ -77,5 +77,7 @@ Lovely proofs of the cosine rule...
 
 [Visual cosine rule #2](https://youtu.be/ZAx3Sw85v00?si=1RswQyi1vCKJCiSw)
 
+---
+
 Heron's rule and other insights...
 [Mathologer on Heron's rules](https://www.youtube.com/watch?v=IguNXoCjBEk)
