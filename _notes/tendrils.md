@@ -19,24 +19,34 @@ A wide variety of branching/tendril effects can be made with the FindShortestPat
 5. Resampling and cleanup.
 7. Animation, skinning, and whatever else you need tendrils for...
 
-In this example we satisfy step one with a TetConformSOP applied to a sphere. This provides a pleasing and *somewhat* uniform internal structure that requires minimal cleanup. The VoronoiFractureSOP can also offer interesting results, as can boolean ops (the list goes on...), but the TenConformSOP is hard to beat for achieving good results out of the box.
+In this example we satisfy step one with a TetConformSOP applied to a sphere. This provides a pleasing and somewhat uniform internal structure that requires minimal fiddling with.
 
-For the tendrils to grow up and out from an origin, we sit our sphere on the ground and then sort the points by proximity to the world origin. Point 0  is now the closest to the origin and becomes our start group, while we select random ends with the GroupSOP, with a noisy @cost attrib to encourage wayward organic detail. The initial setup looks rather uninteresting...
+*The VoronoiFractureSOP can also offer interesting results, as can boolean ops, the RemeshSOP with adaptive edge lengths perhaps fed into a DivideSOP to compute the dual grpah for nice celular structures, the list goes on... BUT, the TetConformSOP is hard to beat for achieving good results out of the box.*
+
+For the tendrils to grow up and out from an origin, we sit our sphere on the ground with a MatchSizeSOP and then sort the points by proximity to the world origin. Point 0 is now the closest to the origin and becomes our start group, while we select random ends with the GroupSOP, with a noisy @cost to encourage wayward organic detail. The initial setup looks massively uninteresting...
 
 <div class="gallery" data-columns="2">
 	<img src="/assets/notes/tendrils/tendrils_initial_sphere.jpg">
 	<img src="/assets/notes/tendrils/tendrils_initial_setup.jpg">	
 </div>
 
-One FSP later (plug in start and end groups, the cost attrib, and output paths "From any start to each end"), and the The result looks *marginally* more interesting:
+...but an FSPSOP later (plug in start and end groups, the cost attrib, and output paths "From any start to each end"), and the The result looks *marginally* more interesting:
 
 ![FSP](assets/notes/tendrils/tendril_hard.jpg)
 
-The polylines are then smoothed with a SubdivisionSOP (or a Resample SOP with "resample by polygon edge" ticked). We could also retain the angular paths while increasing curve resolution with ad EdgeDivideSOP, or by adjusting the parms on the SubdivisionSOP. But for now have this:
+The polylines are then smoothed with a SubdivisionSOP (or a Resample SOP with "resample by polygon edge" ticked).
+
+*Adjustment here can produce interestingvariations, particularly where filtering causes terminal prims to spread for extra frilly detail. We could also retain the angular paths while increasing curve resolution with ad EdgeDivideSOP, or by adjusting the parms on the SubdivisionSOP... Excercises for another time.*
+
+We now have this:
 
 ![FSP with a bit of post-processing](assets/notes/tendrils/tendril_smooth.jpg)
 
-Nice and tendril-y. It's important to note that, at the moment, we have many overlapping prims that need to be combined and reduced into a single curve network. A FuseSOP will combine identically positioned points, before applying a PolyPathSOP to combine prims that share all points. 
+Nice and tendril-y. It's important to note that, at the moment, we have many overlapping prims that need to be combined and reduced into a single curve network. Thankfully, our methods of subdivision have retained the spacial similarity of output points, which makes cleanup straightforward.
+
+A FuseSOP will combine identically positioned points, while a PolyPathSOP will combine prims that share all points.
+
+![Cleanup](assets/notes/tendrils/tendril_cleanup.jpg)
 
 Next, skinning and animation.
 
