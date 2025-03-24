@@ -11,9 +11,13 @@ The input geo in this case starts with a grid of squares, with each square then 
 
 We want all the FSP start points at one end of the input grid, in order to direct the overall flow of the network. I used the following VEX function to do this:
 
-```relpointbbox(0, @P).x < 0.001```
+```@group_starts = relpointbbox(0, @P).z < 1e-5```
 
-This selecting all the prims on one edge of the grid along the x axis. We then select other prims randomly with a GroupSOP. As a final step, we remove all the ends that are too close to the starts with a similar bounding box function:
+This selecting all the prims on one edge of the grid along the x axis.
+
+*As an aside, I've compared the point's bounding box position to a very small threshold, rather than strictly comparing it to zero. This is because combining floating point values and strict equality is enough to get a person frowned upon amongst friends. That said, in this instance strict equality would work just fine and nobody will die if you think a bit fat ZERO is neater than hipster scientific notation.*
+
+We then select other prims randomly with a GroupSOP. As a final step, we remove all the ends that are too close to the starts with a similar bounding box function:
 
 ```relpointbbox(0, @P).x > .6```
 
