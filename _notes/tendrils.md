@@ -42,7 +42,7 @@ We now have this:
 
 ![FSP with a bit of post-processing](/assets/notes/tendrils/tendrils_smooth.jpg)
 
-Nice and tendril-y. It's important to note that, at the moment, we have many overlapping prims that need to be combined and reduced into a single curve network. Thankfully, our methods of subdivision have retained the spacial similarity of output points, which makes cleanup straightforward.
+Flowy. It's important to note that at the moment we have many overlapping prims that need to be combined and reduced into a single curve network. Thankfully, our methods of subdivision have retained the spacial similarity of output points, which makes cleanup straightforward.
 
 A FuseSOP will combine identically positioned points, while a PolyPathSOP will combine prims that share all points.
 
