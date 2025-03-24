@@ -5,6 +5,8 @@ date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/growth/nw_comp_growth.v001.jpg
 ---
+![The finished result](/assets/notes/growth/nw_comp_growth.v001.jpg)
+
 The input geo in this case starts with a grid of squares, with each square then scaled down to their centroids via the ExtrudeSOP. Essentially this, at a suitable resolution:
 
 ![Growth base](/assets/notes/growth/growth_base.gif)
