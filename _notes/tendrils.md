@@ -13,7 +13,7 @@ Here's one...
 
 **The general process is as follows:**
 
-1. Create interesting input geometry.
+1. Create interesting input topology.
 2. Allocate points to start and end groups.
 3. Cost (typically noise).
 4. FSP.
