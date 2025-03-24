@@ -1,14 +1,13 @@
 ---
-title: More surface growth
-subtitle: Let's make some tendrils
+title: Surface growth
+subtitle: Another day, another tendril setup.
 date: 2017-07-30 00:00:00
 description:
-featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
+featured_image: assets/notes/growth/nw_comp_growth.v001.jpg
 ---
+The input geo in this case starts with a grid of squares, with each square then scaled down to their centroids via the ExtrudeSOP. Essentially this, at a suitable resolution:
 
-This is another application of the FindShortestPathSOP (FSP) on interesting input geo.
-
-The input geo in this case starts with a grid of quads, with each quad scaled down to their centroidscentroids via the ExtrudeSOP. Like this:
+![Growth base](/assets/notes/growth/growth_base.gif)
 
 We want all the FSP start points at one end of the input grid, in order to direct the overall flow of the network. I used the following VEX function to do this:
 

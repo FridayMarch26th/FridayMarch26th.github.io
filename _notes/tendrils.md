@@ -1,12 +1,10 @@
 ---
 title: Tendrils #1
-subtitle: Some common techniques for making wandering paths.
+subtitle: A wide variety of branching/tendril effects can be made with the FindShortestPathSOP (FSP).
 date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
 ---
-A wide variety of branching/tendril effects can be made with the FindShortestPathSOP (FSP).
-
 Here's one...
 
 ![The finished result](/assets/notes/tendrils/nw_comp_tendrils.v001.jpg)
