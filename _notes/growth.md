@@ -3,7 +3,7 @@ title: Surface growth
 subtitle: Another day, another tendril setup.
 date: 2017-07-30 00:00:00
 description:
-featured_image: assets/notes/growth/nw_comp_growth.v001.jpg
+featured_image: /assets/notes/growth/nw_comp_growth.v001.jpg
 ---
 The input geo in this case starts with a grid of squares, with each square then scaled down to their centroids via the ExtrudeSOP. Essentially this, at a suitable resolution:
 
@@ -11,11 +11,11 @@ The input geo in this case starts with a grid of squares, with each square then 
 
 We want all the FSP start points at one end of the input grid, in order to direct the overall flow of the network. I used the following VEX function to do this:
 
-relpointbbox(0, @P).x < 0.001
+```relpointbbox(0, @P).x < 0.001```
 
 This selecting all the prims on one edge of the grid along the x axis. We then select other prims randomly with a GroupSOP. As a final step, we remove all the ends that are too close to the starts with a similar bounding box function:
 
-relpointbbox(0, @P).x > .6;
+```relpointbbox(0, @P).x > .6```
 
 We subdivide the curves to smooth them, and use the typical common combination of a FuseSOP followed by a PolyPathSOP to convert the overlapping paths into a single, tidy network.
 
