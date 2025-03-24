@@ -1,16 +1,16 @@
 ---
 title: Tendrils #1
-subtitle: Some common techniques
+subtitle: Some common techniques for making wandering paths.
 date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
 ---
 
-A wide variety of branching/tendril effects can be made with the FindShortestPathSOP (FSP).
+A wide variety of branching/tendril effects can be made with the FindShortestPathSOP (FSP). Here's one...
 
 ![The finished result](/assets/notes/tendrils/nw_comp_tendrils.v001.jpg)
 
-The general process is as follows:
+**The general process is as follows:**
 
 1. Create interesting input geometry.
 2. Allocate points to start and end groups.
@@ -22,8 +22,8 @@ The general process is as follows:
 In this example we satisfy step one with a TetConformSOP applied to a sphere. This provides a pleasing and *somewhat* uniform internal structure that requires minimal cleanup. The VoronoiFractureSOP can also offer interesting results, as can boolean ops (the list goes on...), but the TenConformSOP is hard to beat for achieving good results out of the box.
 
 <div class="gallery" data-columns="2">
-	<img src="assets/notes/tendrils/tendrils_initial_sphere.jpg">
-	<img src="assets/notes/tendrils/tendrils_initial_setup.jpg">	
+	<img src="/assets/notes/tendrils/tendrils_initial_sphere.jpg">
+	<img src="/assets/notes/tendrils/tendrils_initial_setup.jpg">	
 </div>
 
 
