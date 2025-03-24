@@ -50,7 +50,9 @@ A FuseSOP will combine identically positioned points, while a PolyPathSOP will c
 
 Next, skinning and animation.
 
-In preparation for these steps we create a couple of useful attribs with an AttribFillSOP. This SOP creates values that accumulate over the curve network from specified points. TheEdgeTransportSOP can also be used to create these attributes, as can the output cost attrib from the FindShortestPathSOP itself. Each yields slightly different possibilities that are worth a poke. 
+In preparation for these steps we create a couple of useful attribs with an AttribFillSOP. This SOP creates values that accumulate over the curve network from specified points.
+
+*TheEdgeTransportSOP can also be used to create these attributes, as can the output cost attrib from the FindShortestPathSOP itself. Each yields slightly different possibilities that are worth a poke.*
 
 <div class="gallery" data-columns="2">
 	<img src="/assets/notes/tendrils/tendrils_arrival_time_from_roots.jpg">
@@ -61,9 +63,14 @@ Above we can see an arrival time attrib from a boundary group set to our start p
 
 ```neighbourcount(0, @ptnum) == 1```
 
-For animation I've used a trick outlined on Matt Estela's CGWiki (it's refeenced [here](https://tokeru.com/cgwiki/HoudiniFAQ.html#how_do_i_carve_lots_of_curves_at_different_rates; although I swear there was a more complete discussion of it at one point). This *I think* has now been replaced in Houdini 20.5, with a CarveSOP that can now carve by attrib. But we don't have that at the office (Booooo). A useful side effect of Matt's trick is that allows us to inspect the values what we're using to carve, by viewing the geometry in "Carve space" before their original position is restored.
+For animation I've used a "Carve by attribute" trick outlined on Matt Estela's CGWiki (it's mentioned [here](https://tokeru.com/cgwiki/HoudiniFAQ.html#how_do_i_carve_lots_of_curves_at_different_rates; although I swear there was a more complete explanation of it at one point). This has now been replaced in Houdini 20.5, with a CarveSOP with native supprot for carving by attrib. But we're still on H20 at work (Boooo), while a useful side effect of Matt's trick is that allows us to inspect the values what we're using to carve, by viewing the geometry in "Carve space" before the original point positions are restored.
 
-We can control the speed of growth by scaling arrival time attribute before the carve. There's more on that in this write up.
+<div class="gallery" data-columns="2">
+	<img src="/assets/notes/tendrils/tendril_carve_setup.jpg">
+	<img src="/assets/notes/tendrils/tendrils_anim.gif">	
+</div>
+
+*We can control the speed of growth by scaling arrival time attribute before the carve. There's more on that in this write up.*
 
 For skinning thickness we use our @time_from_tips. This ranges from 0 at the tips (no thickness at all), growing thicker as we move along the curves toward the root. With a typical combination of min/ max/ chramps etc, we can dial in tips to taste.
 
