@@ -50,18 +50,13 @@ A FuseSOP will combine identically positioned points, while a PolyPathSOP will c
 
 Next, skinning and animation.
 
-In preparation for these steps we create a couple of useful attribs with an AttribFillSOP. This SOP creates values that accumulate over the curve network from specified points.
+For these steps we will create a couple of useful attribs with an AttribFillSOP (one now, one later). This SOP creates values that accumulate over the curve network from specified points.
 
 *TheEdgeTransportSOP can also be used to create these attributes, as can the output cost attrib from the FindShortestPathSOP itself. Each yields slightly different possibilities that are worth a poke.*
 
-<div class="gallery" data-columns="2">
-	<img src="/assets/notes/tendrils/tendrils_arrival_time_from_roots.jpg">
-	<img src="/assets/notes/tendrils/tendrils_arrival_time_from_tips.jpg">	
-</div>
+![Cleanup](/assets/notes/tendrils/tendrils_arrival_time_from_roots.jpg)
 
-Above we can see an arrival time attrib from a boundary group set to our start point, (which in this case is an easily retrieved point 0), and another arrival time attrib from the points at the network's terminal tips. This second group we can derive by identifying all points with only one connected neighbour:
-
-```neighbourcount(0, @ptnum) == 1```
+Above we can see an arrival time attrib from a boundary group that includes our start point, (which in this case is an easily retrieved point 0), which is used for animated growth out from the root.
 
 For animation I've used a "Carve by attribute" trick outlined on Matt Estela's CGWiki (it's mentioned [here](https://tokeru.com/cgwiki/HoudiniFAQ.html#how_do_i_carve_lots_of_curves_at_different_rates; although I swear there was a more complete explanation of it at one point). This has now been replaced in Houdini 20.5, with a CarveSOP with native supprot for carving by attrib. But we're still on H20 at work (Boooo), while a useful side effect of Matt's trick is that allows us to inspect the values what we're using to carve, by viewing the geometry in "Carve space" before the original point positions are restored.
 
@@ -72,12 +67,21 @@ For animation I've used a "Carve by attribute" trick outlined on Matt Estela's C
 
 *We can control the speed of growth by scaling arrival time attribute before the carve. There's more on that in this write up.*
 
-For skinning thickness we use our @time_from_tips. This ranges from 0 at the tips (no thickness at all), growing thicker as we move along the curves toward the root. With a typical combination of min/ max/ chramps etc, we can dial in tips to taste.
+For skinning thickness we use a second AttribFillSOP, this time accumulating from the tips after the carving animation has trimmed away as yet un-grown geometry. This group is created by identifying all points with only one connected neighbour:
 
-Also worth note is the AttribFillSOP method "Interpolate". This can smoothly blend between different values at boundary groups (not just increasing from the boundary). This offers a different way to mitigate the common problem of defining nicely tapered tendril tips with no weird discontinuities.
+```neighbourcount(0, @ptnum) == 1```
+
+We now have a value that ranges from 0 at the tips (no thickness at all), growing larger as we move along the curves toward the root. With a typical combination of min/ max/ chramps etc, we can dial in tips to taste.
+
+<div class="gallery" data-columns="2">
+	<img src="/assets/notes/tendrils/tendrils_arrival_time_from_tips.jpg">	
+	<img src="/assets/notes/tendrils/tendrils_thick.jpg">	
+</div>
+
+*Also worth note is the AttribFillSOP method "Interpolate". This can smoothly blend between different values at boundary groups (not just increasing from the boundary). This offers a different way to mitigate the common problem of defining nicely tapered tendril tips with no weird discontinuities.*
 
 And we're done. Ish.
 
-The rendered example seen at the top of this page uses a SweepSOP. The tendril thickness scaled by a @pscale that is remapped from our adjusted @time_from_time, and nothing more. The operation is obviously going to skin prims independantly and create the possibility of artifacting around interesecting prims or at junctions. This may or may not be an issue.
+The rendered example seen at the top of this page is simply rendered with Arnold's interpreting a @pscale attrib, which is just remapped from our adjusted @time_from_tips attrib. The operation is obviously going to skin prims independantly and create the possibility of artifacting around interesecting prims or at junctions. This may or may not be an issue.
 
 If a continuous skin is required then there is always the VDBFromPolySOP, at a resolution eye-wateringly high enough to produce the fine detail of pointy tips. This is often slow to process, but I've seen this strategy used many times in production. Cache GEO out on the farm, render with something that can cope with the resulting geometry, and thank your lucky stars that you're not working with FLIP. :)
