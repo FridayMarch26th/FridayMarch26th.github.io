@@ -21,48 +21,46 @@ A wide variety of branching/tendril effects can be made with the FindShortestPat
 
 In this example we satisfy step one with a TetConformSOP applied to a sphere. This provides a pleasing and *somewhat* uniform internal structure that requires minimal cleanup. The VoronoiFractureSOP can also offer interesting results, as can boolean ops (the list goes on...), but the TenConformSOP is hard to beat for achieving good results out of the box.
 
+For the tendrils to grow up and out from an origin, we sit our sphere on the ground and then sort the points by proximity to the world origin. Point 0  is now the closest to the origin and becomes our start group, while we select random ends with the GroupSOP, with a noisy @cost attrib to encourage wayward organic detail. The initial setup looks rather uninteresting...
+
 <div class="gallery" data-columns="2">
 	<img src="/assets/notes/tendrils/tendrils_initial_sphere.jpg">
 	<img src="/assets/notes/tendrils/tendrils_initial_setup.jpg">	
 </div>
 
+One FSP later (plug in start and end groups, the cost attrib, and output paths "From any start to each end"), and the The result looks *marginally* more interesting:
 
-![alt text](tendrils_initial_setup.jpg) ![alt text](tendrils_initial_sphere.jpg)
+![FSP](assets/notes/tendrils/tendril_hard.jpg)
 
-For the tendrils to grow upward from an origin, we sort our sphere by the bounding box y, making point 0 the lowest point in our input geo. This single point becomes our start group, and we select random ends with the GroupSOP, with a noisy @cost attrib to encourage wayward organic detail. The result looks like this:
+The polylines are then smoothed with a SubdivisionSOP (or a Resample SOP with "resample by polygon edge" ticked). We could also retain the angular paths while increasing curve resolution with ad EdgeDivideSOP, or by adjusting the parms on the SubdivisionSOP. But for now have this:
 
-![alt text](assets/notes/tendrils/tendril_hard.jpg)
+![FSP with a bit of post-processing](assets/notes/tendrils/tendril_smooth.jpg)
 
-The polylines are then 'smoothed' with a SubdivisionSOP (or a Resample SOP with "resample by polygon edge" ticked). Retaining hard edges while increasing curve resolution can be accomplished with and EdgeDivideSOP, or by adjusting the parms on the SubdivisionSOP. We now have this:
-
-![alt text](assets/notes/tendrils/tendril_smooth.jpg)
-
-It's important to note that, at this point, we have many overlapping prims that need to be combined and reduced into a single curve network. WHile the resampling methods above are easily cleaned up, not all methods have the same advantage (despite offering interesting artistic outcomes). For us, FuseSOP the curves together will combine identically positioned points, then applying a PolyPathSOP will combine prims that share all points. 
-
-Voila, an interersting network of curves. As a final measure we can use a MatchSizeSOP to position our point 0 at the world origin. Useful.
+Nice and tendril-y. It's important to note that, at the moment, we have many overlapping prims that need to be combined and reduced into a single curve network. A FuseSOP will combine identically positioned points, before applying a PolyPathSOP to combine prims that share all points. 
 
 Next, skinning and animation.
 
-In preparation for these steps we create a couple of useful attribs using the AttribFillSOP. These create values that accumulate over the curve network from specified points. TheEdgeTransportSOP can also be used to create these attributes, as can the output Cost Attrib from the FindShortestPathSOP itself. Each yields slightly different possibilities that might be worth a poke. 
+In preparation for these steps we create a couple of useful attribs with an AttribFillSOP. This SOP creates values that accumulate over the curve network from specified points. TheEdgeTransportSOP can also be used to create these attributes, as can the output cost attrib from the FindShortestPathSOP itself. Each yields slightly different possibilities that are worth a poke. 
 
-Here we can see an arrival time attrib from a boundary group set to our start point, and another from the points at the network's terminal tipsnetwork. This second group we can derive by identifying all points with only one neighbour that are not part of the starts group:
+<div class="gallery" data-columns="2">
+	<img src="/assets/notes/tendrils/tendrils_arrival_time_from_roots.jpg">
+	<img src="/assets/notes/tendrils/tendrils_arrival_time_from_tips.jpg">	
+</div>
 
-!*starts
-neighbourcount(0, @ptnum) == 1
+Above we can see an arrival time attrib from a boundary group set to our start point, (which in this case is an easily retrieved point 0), and another arrival time attrib from the points at the network's terminal tips. This second group we can derive by identifying all points with only one connected neighbour:
 
+```neighbourcount(0, @ptnum) == 1```
 
-![alt text](assets/notes/tendrils/nw_comp_tendrils.v001.jpg)
-
-For animation I've used the "Clip trick" outlined on Matt Estela's CGWiki. This has now been replaced in Houdini 20.5, and a CarveSOP that can now carve by attrib. However, Matt's trick remains interesting as it allows us to inspect the values what we're using to carve, by viewing the geometry in "Carve space".
+For animation I've used a trick outlined on Matt Estela's CGWiki (it's refeenced [here](https://tokeru.com/cgwiki/HoudiniFAQ.html#how_do_i_carve_lots_of_curves_at_different_rates; although I swear there was a more complete discussion of it at one point). This *I think* has now been replaced in Houdini 20.5, with a CarveSOP that can now carve by attrib. But we don't have that at the office (Booooo). A useful side effect of Matt's trick is that allows us to inspect the values what we're using to carve, by viewing the geometry in "Carve space" before their original position is restored.
 
 We can control the speed of growth by scaling arrival time attribute before the carve. There's more on that in this write up.
 
-For skinning thickness we use arrival_time_from_tips. This ranges from 0 at the tips (no thickness at all), growing thicver as we move toward the root. With a typical combination of min/ max/ chramps etc, we can dial in the tips to taste.
+For skinning thickness we use our @time_from_tips. This ranges from 0 at the tips (no thickness at all), growing thicker as we move along the curves toward the root. With a typical combination of min/ max/ chramps etc, we can dial in tips to taste.
 
-Also worth note is the AttribFill method "Interpolate". this can smoothly blend between different values at boundary groups, offering a different way to mitigate the common problem of defining nicely tapered tendril tips with no weird discontinuities.
+Also worth note is the AttribFillSOP method "Interpolate". This can smoothly blend between different values at boundary groups (not just increasing from the boundary). This offers a different way to mitigate the common problem of defining nicely tapered tendril tips with no weird discontinuities.
 
-Done. Ish. The rendered example seen at the top of this age uses a SweepSOP. It's scaled by a @pscale that is derived from our adjusted arrival time, and nothing more. It's obviously going to skin prims independantly and create the possibility offor artifacting around interesecting prims or at junctions. This may or may not be an issue.
+And we're done. Ish.
 
-If a more cohesive network is required then there is always the VDBFromPolySOP, at a resolution eye-wateringly high enough to produce the fine detail of pointy tips. This is often slow to process, but I've sees this strategy used many times in production. Cache GEO out on the farm, and thank your lucky stars that you're not working with FLIP. :)
+The rendered example seen at the top of this page uses a SweepSOP. The tendril thickness scaled by a @pscale that is remapped from our adjusted @time_from_time, and nothing more. The operation is obviously going to skin prims independantly and create the possibility of artifacting around interesecting prims or at junctions. This may or may not be an issue.
 
-
+If a continuous skin is required then there is always the VDBFromPolySOP, at a resolution eye-wateringly high enough to produce the fine detail of pointy tips. This is often slow to process, but I've seen this strategy used many times in production. Cache GEO out on the farm, render with something that can cope with the resulting geometry, and thank your lucky stars that you're not working with FLIP. :)
