@@ -59,14 +59,14 @@ For these steps we will create a couple of useful attribs with an AttribFillSOP 
 
 Above we can see an arrival time attrib from a boundary group that includes our start point, (which in this case is an easily retrieved point 0), which is used for animated growth out from the root. It is predominantly red because the value of the attrib extends beyond one.
 
-For animation I've used a "Carve by attribute" trick outlined on Matt Estela's CGWiki (it's mentioned [here](https://tokeru.com/cgwiki/HoudiniFAQ.html#how_do_i_carve_lots_of_curves_at_different_rates); although I swear there was a more complete explanation of it at one point). This has now been replaced in Houdini 20.5, with a CarveSOP with native supprot for carving by attrib. But we're still on H20 at work (Boooo), while a useful side effect of Matt's trick is that allows us to inspect the values what we're using to carve, by viewing the geometry in "Carve space" before the original point positions are restored.
+For animation I've used a "Carve by attribute" trick outlined on Matt Estela's CGWiki (it's mentioned [here](https://tokeru.com/cgwiki/HoudiniFAQ.html#how_do_i_carve_lots_of_curves_at_different_rates); although I swear there was a more complete explanation of it at one point). This has now been replaced in Houdini 20.5, with a CarveSOP featuring native support for carving by attrib. But we're still on H20 at work (Boooo), while a useful side effect of Matt's trick is that it allows us to inspect the values what we're using to carve, by viewing the geometry in "Carve space" before the original point positions are restored.
 
 <div class="gallery" data-columns="2">
 	<img src="/assets/notes/tendrils/tendrils_carve_setup.jpg">
 	<img src="/assets/notes/tendrils/tendrils_anim.gif">	
 </div>
 
-*We can control the speed of growth by scaling arrival time attribute before the carve. There's more on that in this write up.*
+*We can control the speed of growth by scaling our arrival time attribute before the carve. There's more on that in another write up.*
 
 For skinning thickness we use a second AttribFillSOP, this time accumulating from the tips after the carving animation has trimmed away as yet un-grown geometry. This group is created by identifying all points with only one connected neighbour:
 
