@@ -79,10 +79,12 @@ We now have a value that ranges from 0 at the tips (no thickness at all), growin
 	<img src="/assets/notes/tendrils/tendrils_thick.jpg">	
 </div>
 
-*Also worth note is the AttribFillSOP method "Interpolate". This can smoothly blend between different values at boundary groups (not just increasing from the boundary). This offers a different way to mitigate the common problem of defining nicely tapered tendril tips with no weird discontinuities.*
+*Also worth note is the AttribFillSOP method "Interpolate". This can smoothly blend between different input values present on boundary group attribs, rather than a value that increases from zero at the boundary. This offers a different way to mitigate the common problem of defining nicely tapered tendril tips.*
 
-And we're done. Ish.
+And we're done.
 
-The rendered example seen at the top of this page is simply rendered with Arnold's interpreting a @pscale attrib, which is just remapped from our adjusted @time_from_tips attrib. The operation is obviously going to skin prims independantly and create the possibility of artifacting around interesecting prims or at junctions. This may or may not be an issue.
+Ish.
 
-If a continuous skin is required then there is always the VDBFromPolySOP, at a resolution eye-wateringly high enough to produce the fine detail of pointy tips. This is often slow to process, but I've seen this strategy used many times in production. Cache GEO out on the farm, render with something that can cope with the resulting geometry, and thank your lucky stars that you're not working with FLIP. :)
+The example seen at the top of this page is rendered with Arnold's interpreting a @pscale attrib applied to a set of curves, which is remapped from our adjusted @time_from_tips attrib. The operation is obviously going to skin prims independantly and create the possibility of artifacting around interesecting prims or at junctions. Results will vary.
+
+If a continuous skin is required then there is always the VDBFromPolySOP, at a resolution eye-wateringly high enough to produce the fine detail of pointy tips. This is often slow to process, but I've seen this strategy used many times in production. Cache GEO out on the farm, render with something that can swallow the resulting geometry, and thank your lucky stars that you're not working with FLIP. :)
