@@ -5,8 +5,9 @@ date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
 ---
+A wide variety of branching/tendril effects can be made with the FindShortestPathSOP (FSP).
 
-A wide variety of branching/tendril effects can be made with the FindShortestPathSOP (FSP). Here's one...
+Here's one...
 
 ![The finished result](/assets/notes/tendrils/nw_comp_tendrils.v001.jpg)
 
