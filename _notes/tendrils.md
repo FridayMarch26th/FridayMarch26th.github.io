@@ -32,7 +32,7 @@ For the tendrils to grow up and out from an origin, we sit our sphere on the gro
 
 ...but an FSPSOP later (plug in start and end groups, the cost attrib, and output paths "From any start to each end"), and the The result looks *marginally* more interesting:
 
-![FSP](assets/notes/tendrils/tendril_hard.jpg)
+![FSP](/assets/notes/tendrils/tendril_hard.jpg)
 
 The polylines are then smoothed with a SubdivisionSOP (or a Resample SOP with "resample by polygon edge" ticked).
 
@@ -40,13 +40,13 @@ The polylines are then smoothed with a SubdivisionSOP (or a Resample SOP with "r
 
 We now have this:
 
-![FSP with a bit of post-processing](assets/notes/tendrils/tendril_smooth.jpg)
+![FSP with a bit of post-processing](/assets/notes/tendrils/tendril_smooth.jpg)
 
 Nice and tendril-y. It's important to note that, at the moment, we have many overlapping prims that need to be combined and reduced into a single curve network. Thankfully, our methods of subdivision have retained the spacial similarity of output points, which makes cleanup straightforward.
 
 A FuseSOP will combine identically positioned points, while a PolyPathSOP will combine prims that share all points.
 
-![Cleanup](assets/notes/tendrils/tendril_cleanup.jpg)
+![Cleanup](/assets/notes/tendrils/tendril_cleanup.jpg)
 
 Next, skinning and animation.
 
