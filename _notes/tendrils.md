@@ -32,7 +32,7 @@ For the tendrils to grow up and out from an origin, we sit our sphere on the gro
 
 ...but an FSPSOP later (plug in start and end groups, the cost attrib, and output paths "From any start to each end"), and the The result looks *marginally* more interesting:
 
-![FSP](/assets/notes/tendrils/tendril_hard.jpg)
+![FSP](/assets/notes/tendrils/tendrils_hard.jpg)
 
 The polylines are then smoothed with a SubdivisionSOP (or a Resample SOP with "resample by polygon edge" ticked).
 
@@ -40,13 +40,13 @@ The polylines are then smoothed with a SubdivisionSOP (or a Resample SOP with "r
 
 We now have this:
 
-![FSP with a bit of post-processing](/assets/notes/tendrils/tendril_smooth.jpg)
+![FSP with a bit of post-processing](/assets/notes/tendrils/tendrils_smooth.jpg)
 
 Nice and tendril-y. It's important to note that, at the moment, we have many overlapping prims that need to be combined and reduced into a single curve network. Thankfully, our methods of subdivision have retained the spacial similarity of output points, which makes cleanup straightforward.
 
 A FuseSOP will combine identically positioned points, while a PolyPathSOP will combine prims that share all points.
 
-![Cleanup](/assets/notes/tendrils/tendril_cleanup.jpg)
+![Cleanup](/assets/notes/tendrils/tendrils_cleanup.jpg)
 
 Next, skinning and animation.
 
@@ -66,7 +66,7 @@ Above we can see an arrival time attrib from a boundary group set to our start p
 For animation I've used a "Carve by attribute" trick outlined on Matt Estela's CGWiki (it's mentioned [here](https://tokeru.com/cgwiki/HoudiniFAQ.html#how_do_i_carve_lots_of_curves_at_different_rates; although I swear there was a more complete explanation of it at one point). This has now been replaced in Houdini 20.5, with a CarveSOP with native supprot for carving by attrib. But we're still on H20 at work (Boooo), while a useful side effect of Matt's trick is that allows us to inspect the values what we're using to carve, by viewing the geometry in "Carve space" before the original point positions are restored.
 
 <div class="gallery" data-columns="2">
-	<img src="/assets/notes/tendrils/tendril_carve_setup.jpg">
+	<img src="/assets/notes/tendrils/tendrils_carve_setup.jpg">
 	<img src="/assets/notes/tendrils/tendrils_anim.gif">	
 </div>
 
