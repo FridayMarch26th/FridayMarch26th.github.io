@@ -1,6 +1,6 @@
 ---
-title: Tendrils
-subtitle: Let's make some tendrils
+title: Tendrils #1
+subtitle: Some common techniques
 date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
@@ -8,17 +8,16 @@ featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
 
 A wide variety of branching/tendril effects can be made with the FindShortestPathSOP (FSP).
 
-The process is generally as follows:
+The general process is as follows:
 
 1. Create interesting input geometry.
 2. Allocate points to start and end groups.
 3. Cost (typically noise).
 4. FSP.
-5. Resampling.
-6. Cleanup.
+5. Resampling and cleanup.
+7. Animation, skinning, and whatever else you need tendrils for...
 
-
-In this example we satisfy step one with a TetConformSOP applied to a sphere. This provides a pleasing and *somewhat* regular internal structure that requires minimal cleanup. The VoronoiFractureSOP also offers interesting results, or boolean ops, the list goes on.
+In this example we satisfy step one with a TetConformSOP applied to a sphere. This provides a pleasing and *somewhat* uniform internal structure that requires minimal cleanup. The VoronoiFractureSOP can also offer interesting results, as can boolean ops (the list goes on...), but the TenConformSOP is hard to beat for achieving good results out of the box.
 
 For the tendrils to grow upward from an origin, we sort our sphere by the bounding box y, making point 0 the lowest point in our input geo. This single point becomes our start group, and we select random ends with the GroupSOP, with a noisy @cost attrib to encourage wayward organic detail. The result looks like this:
 
