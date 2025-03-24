@@ -22,7 +22,7 @@ Here's one...
 
 In this example we satisfy step one with a TetConformSOP applied to a sphere. This provides a pleasing and somewhat uniform internal structure that requires minimal fiddling with.
 
-*The VoronoiFractureSOP can also offer interesting results, as can boolean ops, the RemeshSOP with adaptive edge lengths perhaps fed into a DivideSOP to compute the dual grpah for nice celular structures, the list goes on... BUT, the TetConformSOP is hard to beat for achieving good results out of the box.*
+*The VoronoiFractureSOP can also offer interesting results, as can boolean ops, the RemeshSOP with adaptive edge lengths perhaps fed into a DivideSOP to compute the dual graph for nice cellular structures, the list goes on... BUT, the TetConformSOP is hard to beat for good results out of the box.*
 
 For the tendrils to grow up and out from an origin, we sit our sphere on the ground with a MatchSizeSOP and then sort the points by proximity to the world origin. Point 0 is now the closest to the origin and becomes our start group, while we select random ends with the GroupSOP, with a noisy @cost to encourage wayward organic detail. The initial setup looks massively uninteresting...
 
@@ -31,13 +31,13 @@ For the tendrils to grow up and out from an origin, we sit our sphere on the gro
 	<img src="/assets/notes/tendrils/tendrils_initial_setup.jpg">	
 </div>
 
-...but an FSPSOP later (plug in start and end groups, the cost attrib, and output paths "From any start to each end"), and the The result looks *marginally* more interesting:
+...but an FindShortestPathSOP later (plug in start and end groups, the cost attrib, and output paths "From any start to each end"), and the The result looks *marginally* more interesting:
 
 ![FSP](/assets/notes/tendrils/tendrils_hard.jpg)
 
 The polylines are then smoothed with a SubdivisionSOP (or a Resample SOP with "resample by polygon edge" ticked).
 
-*Adjustment here can produce interestingvariations, particularly where filtering causes terminal prims to spread for extra frilly detail. We could also retain the angular paths while increasing curve resolution with ad EdgeDivideSOP, or by adjusting the parms on the SubdivisionSOP... Excercises for another time.*
+*Adjustment here can produce interesting variations, particularly where filtering causes terminal prims to fan out. We could also retain the angular paths while increasing curve resolution with an EdgeDivideSOP, or by adjusting the parms on the SubdivisionSOP... Excercises for another time.*
 
 We now have this:
 
