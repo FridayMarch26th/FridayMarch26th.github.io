@@ -11,7 +11,7 @@ The input geo in this case starts with a grid of squares, with each square then 
 
 ![Growth base](/assets/notes/growth/growth_base.gif)
 
-We want all the FSP start points from along one side of the input grid, in order to direct the overall flow of the network. I used the following VEX function to do this:
+We want all the FSP start points from along one open edge of the input grid. This VEX will do that:
 
 ```@group_starts = relpointbbox(0, @P).y == 0.0```
 
