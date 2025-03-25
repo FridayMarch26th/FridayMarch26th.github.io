@@ -44,7 +44,7 @@ Notice that we're adding forces with the first two operations, then we're multip
 
 You could even separate the effect into multiple volumes if you wanted a clearer separation of the various vectors, which would also give you access to adjusting individual force components from within POPs, but in the end I combined them for the sake of not looking up the velocity info' more times than was necessary.
 
-An aside... In early tests we quickly fell into the problem that is this: The obvious place to spawn particles from when pushing them along a network of curves is at the root. However, the annoyance of this is that with each successive generation of branches the distribution of particles grows thinner and thinner. Not good.
+An aside... In early tests we quickly fell into the problem that is this: When pushing particles along a network of curves, the obvious place to spawn them from is at the root. However, the annoyance of this is that with each successive generation of branches the distribution of particles grows thinner and thinner. Easy to spot, potentially difficult to mitigate nicely.
 
 So here, by generating points over the entire curve network, rather than only at the origin, we can keep a nice volume of particles moving along.
 
