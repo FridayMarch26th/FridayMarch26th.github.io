@@ -19,7 +19,7 @@ We then select end points randomly with a GroupSOP. As a final step, from the en
 
 ```@group_ends *= relpointbbox(0, @P).y > 0.6```
 
-Next, in the same manner as [this example](/notes/tendrils), we subdivide the curves and use the typical combination of a FuseSOP followed by a PolyPathSOP to convert the overlapping paths into a single, tidy curve network.
+Next, in the same manner as [this example](/notes/tendrils), we subdivide the curves and use the typical combination of a FuseSOP followed by a PolyPathSOP to convert the mass of overlapping prims into a tidy curve network.
 
 ![Subdivided Ggrowth](/assets/notes/growth/growth_subd.gif)
 
@@ -29,7 +29,7 @@ Similarly, we also need our accumulating attribs, but with more than point 0 poi
 
 Now, to animate. As in the previous example we carve by our accumulating attrib and, hey presto, animated growth. However, the result feels very linear, which is jarring where the animation comes to an abrupt stop at the terminal prims.
 
-![Linear Anim](/assets/notes/growth/growth_preslow.gif)
+![Linear Anim](/assets/notes/growth/growth_pre_slow.gif)
 
 We can adjust the animation by stretching and compressing the arrival time attribs. Larger changes in arrival time along a prim will slow animation (and vice versa), while non-linear changes will create non-linear animation (easing).
 
@@ -43,7 +43,7 @@ And then we feed the resulting point group into a GroupPrommoteSOP to prims. The
 
 The result of that adjustment is some nice easing as the wandering tendrils arrive at their destinations.
 
-![Linear Anim](/assets/notes/growth/growth_postslow.gif)
+![Linear Anim](/assets/notes/growth/growth_post_slow.gif)
 
 What remains is to scatter points on the pre-carved curved network, and then either AttribInterpolateSOP the animated values to those points to drive colour and scale, or perhaps measure the distance between the scattered points and the carved curve network - the greater the distance from the curve network, the less active the ponits will be.
 
