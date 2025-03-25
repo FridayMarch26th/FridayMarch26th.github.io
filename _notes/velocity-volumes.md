@@ -6,7 +6,7 @@ description:
 featured_image: /assets/notes/velocity/velocity_poster.jpg
 ---
 
-![alt text](assets/notes/velocity/velocity_poster.gif)
+![The result](/assets/notes/velocity/velocity_poster.gif)
 
 A recent request involved sending particles along curves. These examples do a bit of that.
 
