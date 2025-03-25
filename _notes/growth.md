@@ -25,7 +25,7 @@ Next, in the same manner as [this example](/notes/tendrils), we subdivide the cu
 
 Similarly, we also need our accumulating arrival time attrib. For that we need our start group, but this will have been removed by the FSPSOP. With many points in the FSP start group network it's worth restoring that group procedurally. The last few ops look a bit like this:
 
-![The story so far](/assets/notes/growth/growth_sofar.gif)
+![The story so far](/assets/notes/growth/growth_sofar.jpg)
 
 Now, to animate. As in the previous example we carve by our accumulating attrib and, hey presto, animated growth. However, the result feels very linear, which is jarring where the animation comes to an abrupt stop at the terminal prims.
 
