@@ -8,9 +8,9 @@ featured_image: /assets/notes/traversal-attrib/travesal_poster.jpg
 
 ![The finished result](/assets/notes/traversal-attrib/travesal_poster.gif)
 
-This example starts with a 2D curve network, createdcreated with a circleSOP and a vorooi crfture, and then biasing the end points by favouring those furtehr away from the origin.
+This example starts with a 2D curve network, with the input to the FindShortestPathSOP created via a circleSOP and a VoronoiFractureSOP, with a bias favouring end points further away from the origin.
 
-We then create a group of points that will be at the cutting edge of the engery as it travels along the network, and create an attrib to represent that energy
+We then create a group of points that will be at the cutting edge of the energy as it travels along the network, and create an attrib to represent that energy
 
 Next, an important step. We look up the nbeighbouring points, storing those downstream into an array attrib. This is completed before any animation begins, creating a lookup that we can refer to later we can avoid unnecessary computation. This creation of a lookup is interesting, and can use different metricsm ethods (coneangle etc). 
 
