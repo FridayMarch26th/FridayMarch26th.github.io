@@ -23,7 +23,7 @@ Next, in the same manner as [this example](/notes/tendrils), we subdivide the cu
 
 ![Subdivided Ggrowth](/assets/notes/growth/growth_subd.gif)
 
-Similarly, we also need our accumulating attribs, but with more than point 0 point in the network it's worth restoring the original group procedurally, which was destroyed along the way. So what we now have looks a little like this:
+Similarly, we also need our accumulating arrival time attrib. For that we need our start group, but this will have been removed by the FSPSOP. With many points in the FSP start group network it's worth restoring that group procedurally. The last few ops look a bit like this:
 
 ![The story so far](/assets/notes/growth/growth_sofar.gif)
 
