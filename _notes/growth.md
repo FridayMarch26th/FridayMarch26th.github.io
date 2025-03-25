@@ -17,7 +17,7 @@ We want all the FSP start points from along one open edge of the input grid. Thi
 
 We then select end points randomly with a GroupSOP. As a final step, from the end group we remove points that are too close to the starting line with a similar bounding box function:
 
-```@group_ends *= relpointbbox(0, @P).x > 0.6```
+```@group_ends *= relpointbbox(0, @P).y > 0.6```
 
 Next, in the same manner as [this example](/notes/tendrils), we subdivide the curves and use the typical combination of a FuseSOP followed by a PolyPathSOP to convert the overlapping paths into a single, tidy curve network.
 
