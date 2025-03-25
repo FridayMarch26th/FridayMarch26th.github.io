@@ -1,12 +1,14 @@
 ---
 title: Velocity Volumes
-subtitle: Let's make some tendrils
+subtitle: POPs along a path
 date: 2017-07-30 00:00:00
 description:
-featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
+featured_image: /assets/notes/velocity/velocity_poster.jpg
 ---
 
-A recent request involved sending "energy" over a series of curves, these examples do that.
+![alt text](assets/notes/velocity/velocity_poster.gif)
+
+A recent request involved sending particles along curves. These examples do a bit of that.
 
 The input geo seen here is the same as for this example. Cleaned up FSP generated curves provude a nice foundation of the effect.
 
