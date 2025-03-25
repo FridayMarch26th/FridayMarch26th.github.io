@@ -5,35 +5,45 @@ date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/growth/nw_comp_growth.v001.jpg
 ---
-![The finished result](/assets/notes/growth/nw_comp_growth.v001.jpg)
+![The finished result](/assets/notes/growth/growth_preview.gif)
 
-The input geo in this case starts with a grid of squares, with each square then scaled down to their centroids via the ExtrudeSOP. Essentially this, at a suitable resolution:
+The input geo in this case starts with a grid of squares, with each square then scaled down to their centroids via the ExtrudeSOP, followed by a FuseSOP to remove overlapping points. Essentially this, at a suitably high resolution:
 
 ![Growth base](/assets/notes/growth/growth_base.gif)
 
-We want all the FSP start points at one end of the input grid, in order to direct the overall flow of the network. I used the following VEX function to do this:
+We want all the FSP start points from along one side of the input grid, in order to direct the overall flow of the network. I used the following VEX function to do this:
 
-```@group_starts = relpointbbox(0, @P).z < 1e-5```
+```@group_starts = relpointbbox(0, @P).y == 0.0```
 
-This selecting all the prims on one edge of the grid along the x axis.
+We then select end points randomly with a GroupSOP. As a final step, from the end group we remove points that are too close to the starting line with a similar bounding box function:
 
-*As an aside, I've compared the point's bounding box position to a very small threshold, rather than strictly comparing it to zero. This is because combining floating point values and strict equality is enough to get a person frowned upon amongst friends. That said, in this instance strict equality would work just fine and nobody will die if you think a bit fat ZERO is neater than hipster scientific notation.*
+```@group_ends *= relpointbbox(0, @P).x > 0.6```
 
-We then select other prims randomly with a GroupSOP. As a final step, we remove all the ends that are too close to the starts with a similar bounding box function:
+Next, in the same manner as [this example](/notes/tendrils), we subdivide the curves and use the typical combination of a FuseSOP followed by a PolyPathSOP to convert the overlapping paths into a single, tidy curve network.
 
-```relpointbbox(0, @P).x > .6```
+![Subdivided Ggrowth](/assets/notes/growth/growth_subd.gif)
 
-We subdivide the curves to smooth them, and use the typical common combination of a FuseSOP followed by a PolyPathSOP to convert the overlapping paths into a single, tidy network.
+Similarly, we also need our accumulating attribs, but with more than point 0 point in the network it's worth restoring the original group procedurally, which was destroyed along the way. So what we now have looks a little like this:
 
-We also want to create some accumulating attribs, as per this example, but with more than one start point in the network we must first restore the start ponit group, which was destroyed along the way. Like this:
+![The story so far](/assets/notes/growth/growth_sofar.gif)
 
-Now, to animate. As in the previous example we carve by our accumulating attrib and, hey presto, animated growth. However, the result feels very linear, particualrly where the growth comes to an end at the terminal prims.
+Now, to animate. As in the previous example we carve by our accumulating attrib and, hey presto, animated growth. However, the result feels very linear, which is jarring where the animation comes to an abrupt stop at the terminal prims.
 
-We can adjust the animation be stretching and compressing the arrival time attribs. The greater the distance the slower the animation (and vice versa), while non-linear distances will create non-linear animation (easing).
+![Linear Anim](/assets/notes/growth/growth_preslow.gif)
 
-In order to arrive at our desired result we first need to isolate all the terimal prims, we can do that with our previous tip finding trickary and a group promote.
+We can adjust the animation by stretching and compressing the arrival time attribs. Larger changes in arrival time along a prim will slow animation (and vice versa), while non-linear changes will create non-linear animation (easing).
 
-We then use this command to stretch the arrival time at the terminal prims, by adding to it using the curves intrinsic uvs. We also bias the stretching so that it begins aggresively before slowing down toward the end of the prim. This creates a pleasent easing effect:
+SO. We first need to isolate the terminal prims. We can find them by identifying terminal points with this:
+
+```@group_tips = neighbourcount(0, @ptnum) == 1 && !inpointgroup(0, "starts", @ptnum)```
+
+And then we feed the resulting point group into a GroupPrommoteSOP to prims. Then it's a straight forward case of adding to the original arrival time over the length of the prim, with a chramp parm to introduce bias.
+
+![Linear Anim](/assets/notes/growth/growth_biasattrib.jpg)
+
+The result of that adjustment is some nice easing as the wandering tendrils arrive at their destinations.
+
+![Linear Anim](/assets/notes/growth/growth_postslow.gif)
 
 To achieve the particular finish on the main tendrils I scatter points on the pre-carved curved network, and then sample the animated prims to see how close our scattered points are to the original prim.
 
