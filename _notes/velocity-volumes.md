@@ -14,18 +14,24 @@ The input geo we start with is here is the same as in [this example](/notes/tend
 
 Now we need POPs, spwaned from animating input geometry. Same as above, curves carved by an arrival time gradient starting from a single root point.
 
-The actual guts of the motion is very straightforward, a velocity volume around the entire curve network that advects the POPs. We use volume wrangles to adjust the velocity, with the curve network fed into the wrangles' second input. Into the volume we combine two vectors:
+The actual guts of the motion is very straightforward, a velocity volume around the entire curve network that advects the POPs. We use volume wrangles to adjust the velocity, with the curve network fed into the wrangles' second input. The network for what might look a bit like this:
+
+The network for that might look a bit like this:
+
+![The result](/assets/notes/velocity/velocity_network.jpg)
+
+As for what's in the wrangles, we combine two vectors:
 
 The first vector pushes the particle toward the closest point on the curve network:
 ```
 vector pos = minpos(1, @P);
-@v = normalize(pos - @P) * chf("Magnitude");
+@v += normalize(pos - @P) * chf("Magnitude");
 ```
 
 The second vector pushes the particle along the curve. 
 ```
 int pt = nearpoint(1, @P);
-v@v = point(1, "N", pt) * chf("Magnitude");
+v@v += point(1, "N", pt) * chf("Magnitude");
 ```
 
 You could also remove all velocity inside the curve network by sampling a surface volume with a bit of this:
@@ -34,13 +40,11 @@ float vs = volumesample(1, "surface", @P);
 @v *= vs > 0;
 ```
 
-The network for that might look a bit like this:
-
-![The result](/assets/notes/velocity/velocity_network.jpg)
+Notice that we're adding forces with the first two operations, then we're multiplying them down to nothing with the third.
 
 You could even separate the effect into multiple volumes if you wanted a clearer separation of the various vectors, which would also give you access to adjusting individual force components from within POPs, but in the end I combined them for the sake of not looking up the velocity info' more times than was necessary.
 
-An aside... In early tests we quickly fell into the problem that is this: The obvious place to spawn particles from when pushing them along a network of curves is at the root. However, the annoyance of this is that with each successive generation of branches the distribnution of particles grows thinner and thinner. Not good.
+An aside... In early tests we quickly fell into the problem that is this: The obvious place to spawn particles from when pushing them along a network of curves is at the root. However, the annoyance of this is that with each successive generation of branches the distribution of particles grows thinner and thinner. Not good.
 
 So here, by generating points over the entire curve network, rather than only at the origin, we can keep a nice volume of particles moving along.
 

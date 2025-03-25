@@ -23,7 +23,7 @@ THe next few steps are extremely similar to [this example](/notes/tendrils) (and
 
 We subdivide the curves and use the typical combination of a FuseSOP followed by a PolyPathSOP to convert the mass of overlapping prims into a tidy curve network.
 
-![Subdivided Ggrowth](/assets/notes/growth/growth_subd.gif)
+![Subdivided Growth](/assets/notes/growth/growth_subd.gif)
 
 We also need our accumulating arrival time attrib. For that we need our start group, but this will have been removed by the FSPSOP. With many points in the FSP start group network it's worth restoring that group procedurally. The last few ops look a bit like this:
 
