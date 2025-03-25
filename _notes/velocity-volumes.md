@@ -17,13 +17,14 @@ Now we need POPs, spwaned from animating input geometry. Same as above, curves c
 The actual guts of the motion is very straightforward, a velocity volume around the entire curve network that advects the POPs. We use volume wrangles to adjust the velocity, with the curve network fed into the wrangles' second input. Into the volume we combine two vectors:
 
 The first vector pushes the particle toward the closest point on the curve network:
-```vector pos = minpos(1, @P);
+```
+vector pos = minpos(1, @P);
 @v = normalize(pos - @P) * chf("Magnitude");
 ```
 
 The second vector pushes the particle along the curve. 
-```int pt = nearpoint(1, @P);
-
+```
+int pt = nearpoint(1, @P);
 v@v = point(1, "N", pt) * chf("Magnitude");
 ```
 
