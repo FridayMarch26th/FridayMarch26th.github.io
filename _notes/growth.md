@@ -33,20 +33,20 @@ Now, to animate. As in the previous example we carve by our accumulating attrib 
 
 ![Linear Anim](/assets/notes/growth/growth_pre_slow.gif)
 
-We can adjust the animation by stretching and compressing the arrival time attribs. Larger changes in arrival time along a prim will slow animation (and vice versa), while non-linear changes will create non-linear animation (easing).
+To soften the animation we can adjust arrival time attrib, stretching and compressing time to affect the speed at which things occur. Larger changes in arrival time along a prim will slow animation (and vice versa), while non-linear adjust will create non-linear animation (easing).
 
 SO. We first need to isolate the terminal prims. We can find them by identifying terminal points with this:
 
 ```@group_tips = neighbourcount(0, @ptnum) == 1 && !inpointgroup(0, "starts", @ptnum)```
 
-And then we feed the resulting point group into a GroupPrommoteSOP to prims. Then it's a straight forward case of adding to the original arrival time over the length of the prim, with a chramp parm to introduce bias.
+And then we feed the resulting point group into a GroupPrommoteSOP to prims. Then it's a straightforward case of adding to the original arrival time over the length of the prim, with a chramp parm to introduce bias.
 
 ![Linear Anim](/assets/notes/growth/growth_biasattrib.jpg)
 
-The result of that adjustment is some nice easing as the wandering tendrils arrive at their destinations.
+The result of this adjustment is the terminal prims slowing to a stop as the wandering tendrils arrive at their destinations (the slightly staccato GIF does us no favours here, but rest assured it's much nicer :)):
 
-![Linear Anim](/assets/notes/growth/growth_post_slow.gif)
+![Non-linear Anim](/assets/notes/growth/growth_post_slow.gif)
 
-What remains is to scatter points on the pre-carved curved network, and then either AttribInterpolateSOP the animated values to those points to drive colour and scale, or perhaps measure the distance between the scattered points and the carved curve network - the greater the distance from the curve network, the less active the ponits will be.
+What remains is to scatter points on the pre-carved curved network, and then either AttribInterpolateSOP the animated values to those points to drive colour and scale, or perhaps measure the distance between the scattered points and the carved curve network - the greater the distance from the curve network, the less active the points will be.
 
 For the larger circles on the ends of the terminal prims, we need to know the ratio of prim length pre and post carve, a value that will increase from 0.0 to 1.0 as the length of a prim arrives at its pre-carve state.
