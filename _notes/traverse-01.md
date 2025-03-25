@@ -1,39 +1,21 @@
 ---
-title: Traverse 01
+title: Traversal Attribs
 subtitle: Let's make some tendrils
 date: 2017-07-30 00:00:00
 description:
-featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
+featured_image: /assets/notes/traversal-attrib/travesal_poster.jpg
 ---
 
-The effect is largely a product of using a FindShortestPathSOP (FSP) on interesting input geo.
+![The finished result](/assets/notes/traversal-attrib/travesal_poster.gif)
 
-In this instance I've used a TetConformSOP on a sphere, it provides an appropriate internal structure that requires minimal cleanup. The nature of the curves that are fed into the FSP plays a srong part in the look of the subsequant tendrils.
+This example starts with a 2D curve network, createdcreated with a circleSOP and a vorooi crfture, and then biasing the end points by favouring those furtehr away from the origin.
 
-For the tendrils to grow upward, we sort the bounding box y, making point 0 the lowest point in the input geo. THis becomes our start group, we select random end groups and a noisy cost attrib to avoid the FindShortestPath operation to help introduce organic detail.
+We then create a group of points that will be at the cutting edge of the engery as it travels along the network, and create an attrib to represent that energy
 
-![alt text](assets/notes/tendrils/tendril_hard.jpg)
+Next, an important step. We look up the nbeighbouring points, storing those downstream into an array attrib. This is completed before any animation begins, creating a lookup that we can refer to later we can avoid unnecessary computation. This creation of a lookup is interesting, and can use different metricsm ethods (coneangle etc). 
 
+To create a regul pulse, we stike a beat every second
 
-The polylines are then smoothed with a subdivisionSOP (or a resample SOP with "resample by polygon wdge" ticked).
+we then use the following code to pick the first child point in any points children array, and send it the energy we store. We then shuffle that child to the back of the array. We could also pick the child by random id, or indeed by whatever metric provides an interesting result.
 
-![alt text](assets/notes/tendrils/tendril_smooth.jpg)
-
-It's important to remember that, at this point, there are many overlapping prims, the differt output paths from the FSP op. We must therefore fuse the curves together, and then apply a polypath, to remove overlapping prims and create the necessary polypath network.
-
-We now have a useful set of curves that we can skin.
-
-In preparation we create a couple of useful attribs using the AttribFillSOP, values that accumulate over the network from points that we specify that we specify along the networks of curves (EdgeTransport is also useful for this).
-
-We can use arrival time from the start point, and arrival time from the points at their tips.
-
-We will use this accumulating attribute to dirve everything from tendril thickness to animation.
-
-![alt text](assets/notes/tendrils/nw_comp_tendrils.v001.jpg)
-
-We find 
-
-FOr starts, we can remap teh time from leaf-level
-
-
-
+Having selected tnew leadersa nd passe on the energy, we can now decay the energy across the network in order to fade the energy down to zero.

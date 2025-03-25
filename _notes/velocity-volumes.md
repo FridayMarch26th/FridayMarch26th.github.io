@@ -48,19 +48,6 @@ An aside... In early tests we quickly fell into the problem that is this: When p
 
 So here, by generating points over the entire curve network, rather than only at the origin, we can keep a nice volume of particles moving along.
 
-Or second example uses a 2d curve network, createdcreated with a circleSOP and a vorooi crfture, and then biasing the end points by favouring those furtehr away from the origin.
-
-We then create a group of points that will be at the cutting edge of the engery as it travels along the network, and create an attrib to represent that energy
-
-Next, an important step. We look up the nbeighbouring points, storing those downstream into an array attrib. This is completed before any animation begins, creating a lookup that we can refer to later we can avoid unnecessary computation. This creation of a lookup is interesting, and can use different metricsm ethods (coneangle etc). 
-
-To create a regul pulse, we stike a beat every second
-
-we then use the following code to pick the first child point in any points children array, and send it the energy we store. We then shuffle that child to the back of the array. We could also pick the child by random id, or indeed by whatever metric provides an interesting result.
-
-Having selected tnew leadersa nd passe on the energy, we can now decay the energy across the network in order to fade the energy down to zero.
-
-
 Our final example is more involved than the other two. It used a tetconform Based curve similr to the one found here.
 
 This time, rather than sending the energy across the cruve network using attributes, we're going to use explicit particle positions sampled form the incoming network with some very common and useful functons.
