@@ -45,8 +45,6 @@ The result of that adjustment is some nice easing as the wandering tendrils arri
 
 ![Linear Anim](/assets/notes/growth/growth_postslow.gif)
 
-To achieve the particular finish on the main tendrils I scatter points on the pre-carved curved network, and then sample the animated prims to see how close our scattered points are to the original prim.
+What remains is to scatter points on the pre-carved curved network, and then either AttribInterpolateSOP the animated values to those points to drive colour and scale, or perhaps measure the distance between the scattered points and the carved curve network - the greater the distance from the curve network, the less active the ponits will be.
 
-To create the larger circles on the ends of the terminal prims, we need to know the ratio of prim length pre and post carve, which will grow to one as the length of a prim arrives at its pre-carve length.
-
-We would also like to know the prims that are at the terminal level, which prims are at the ends of the network.
+For the larger circles on the ends of the terminal prims, we need to know the ratio of prim length pre and post carve, a value that will increase from 0.0 to 1.0 as the length of a prim arrives at its pre-carve state.
