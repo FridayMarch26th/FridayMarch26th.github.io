@@ -1,6 +1,6 @@
 ---
 title: Velocity Volumes
-subtitle: POPs along a path
+subtitle: Pushing POPs along a path
 date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/velocity/velocity_poster.jpg
@@ -8,7 +8,7 @@ featured_image: /assets/notes/velocity/velocity_poster.jpg
 
 ![The result](/assets/notes/velocity/velocity_poster.gif)
 
-Some solutions to a recent request for sending things along curves.
+A solution to a recent request for sending things along curves.
 
 The input geo we start with is here is the same as in [this example](/notes/tendrils). Cleaned up FSP generated curves provide a nice foundation for this effect.
 
