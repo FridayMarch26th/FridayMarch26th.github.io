@@ -40,9 +40,13 @@ And then we can lookup the values that we need. The position, and a normal to or
 
 ![Apply attribs](/assets/notes/traversal-pops/traverse_pops_apply.jpg)
 
-But what about when we approach a function, more descisions required. Any point with a uv value above one has effectively moved beyond the end of the prim it's been trvelling along. Now, in much the same way as the initial descision, we can now query the prims connected to this final point and start the process again. We pick a new prim, we reset the uv, we continue onward.
+But what about when we approach the end of a prim? We do this:
 
-The only additional constraint is waht to do if the point is a terminal, if it has now connecting prims. Well... In which case there's nowhere to go and the prim can be safely killed off.
+![The meat of the logic](/assets/notes/traversal-pops/traverse_pops_logic.jpg)
+
+Any point with a u value above 1.0 has effectively moved beyond the end of the prim it's been trvelling along. So having identified the particles that are about to hit the end of the line, we can now query the final point of their prims to see what *other* prims they're connected to. So we pick a new prim, we reset the uv, and we continue onward.
+
+The only additional constraint is what to do if the point is ridling along terminal prim. Well... In which case there's nowhere to go and the particle must be killed off.
 
 NOW. One more thing. As mentiuoned earlier a common problem with this effect is that the density of particles reduces as the journey onward, the particles thin out through suvsequant generations of branches, until there aren't many left toward the leaves.
 
