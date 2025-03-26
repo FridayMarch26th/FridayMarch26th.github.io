@@ -6,7 +6,7 @@ description:
 featured_image: /assets/notes/traversal-attrib/travesal_poster.jpg
 ---
 
-![The finished result](/assets/notes/traversal-attrib/travesal_poster.gif)
+![The finished result](/assets/notes/traversal-attrib/traversal_poster.gif)
 
 This example starts with a 2D curve network, with the input to the FindShortestPathSOP created via a circleSOP and a VoronoiFractureSOP, with a bias favouring end points further away from the origin.
 
