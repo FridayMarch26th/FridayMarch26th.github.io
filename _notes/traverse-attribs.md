@@ -6,9 +6,13 @@ description:
 featured_image: /assets/notes/traversal-attrib/travesal_poster.jpg
 ---
 
-![The finished result](/assets/notes/traversal-attrib/traversal_poster.gif)
+![The finished result](/assets/notes/traversal-attrib/traversal_attrib.gif)
 
-This example starts with a 2D curve network, with the input to the FindShortestPathSOP created via a circleSOP and a VoronoiFractureSOP, with a bias favouring end points further away from the origin.
+This example starts with a 2D curve network. The input to the FindShortestPathSOP is created via a circleSOP and then a VoronoiFractureSOP, with a bias favouring end points further away from the origin to give smaller tips to the longer main branches.
+
+Beyond the typical cleanup (SubdivideSop, FuseSOP, PolyPathSOP...) we need a few things before we feed the network into a SolverSOP:
+
+
 
 We then create a group of points that will be at the cutting edge of the energy as it travels along the network, and create an attrib to represent that energy
 
