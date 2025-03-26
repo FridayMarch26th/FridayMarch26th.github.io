@@ -22,11 +22,23 @@ Matt Estela has a longer write up of the extremely useful primuv(), [here](https
 
 So with this, we can scatter a point onto a prim, and then send it along that prim by adjusting a "U" attrib. It's not unlike what a combo of the ScatterSOP (with @sourceprim and @sourcepimuv attribs) and an AttributeInterpolateSOP might do, but what happens when we get to the end of the prim? We need to pick the next one. Here we go.
 
-This is POPs network. We have a PopLocation, a clump of nodes that define the traversal logic, and a couple of nodes that undertake replication (currently bypassed, we'll get there in a bit).
+This is POPs network. We have a PopLocation, a clump of nodes that make up the traversal logic, and a couple of nodes for point replication (currently bypassed, we'll get there in a bit).
 
 ![Overview](/assets/notes/traversal-pops/traverse_pops_overview.jpg)
 
-We must first source some points at the origin, our point zero, and lt them decide which of the prims connecting to that ponit that travel along. We can find a list of connected prims with the function primpoints(). We pick one prim from this list,and then primuv our way toward the end.
+We must first source some points, and let the just-born (defined with a group in the POPLocation) particles decide at random which of the prims connecting to our root point that they travel along. This does that:
+
+![Initialize](/assets/notes/traversal-pops/traverse_pops_init.jpg)
+
+We can find an array of prims connected to any point with the function primpoints(). We've picked one prim from this array at random,and then primuv our way along it.
+
+Here we increment the value that we're using to sample the position on a prim, with a bit of per-particle randomization and adjusting for primlength length as we go. Looking at this now we could probably optimize away a few of the non-regularly changing values, but none the less:
+
+![Traverse](/assets/notes/traversal-pops/traverse_pops_traverse.jpg)
+
+And then we can lookup the values that we need. The position, and a normal to orient the particle on the curve (created with an OrientAlongCurveSOP on the curve network):
+
+![Apply attribs](/assets/notes/traversal-pops/traverse_pops_apply.jpg)
 
 But what about when we approach a function, more descisions required. Any point with a uv value above one has effectively moved beyond the end of the prim it's been trvelling along. Now, in much the same way as the initial descision, we can now query the prims connected to this final point and start the process again. We pick a new prim, we reset the uv, we continue onward.
 
