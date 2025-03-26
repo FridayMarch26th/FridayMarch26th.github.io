@@ -28,7 +28,6 @@ Next, a solver with three simple steps:
 
 ![Solver Overview](/assets/notes/traversal-attrib/traversal-attribs-solver.jpg)
 
-
 Step 1. Once every second, add our root point to the leadesr group and an energy of 1.0.
 ![Solver step 1](/assets/notes/traversal-attribs-solver1.jpg)
 
