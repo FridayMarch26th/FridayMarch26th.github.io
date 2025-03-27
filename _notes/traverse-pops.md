@@ -10,9 +10,12 @@ featured_image: /assets/notes/traversal-pops/nw_comp_traverse_pops.v001.jpg
 	<img src="/assets/notes/traversal-pops/traversal_pops-poster.gif">
 </div>
 
-The starting curve network used in this effect is outlined [here](/notes/tendrils). It gives us a single root from which the entire network emerges:
+The starting curve network used in this effect is outlined [here](/notes/tendrils). It gives us a single root point from which the entire network emerges:
 
-![Root](/assets/notes/traversal-pops/root.jpg)
+<div class="gallery" data-columns="2">
+		<img src="/assets/notes/traversal-pops/traverse_pops_initial.closer.jpg">
+		<img src="/assets/notes/traversal-pops/traverse_pops_initial.far.jpg">
+</div>
 
 In [this example](/notes/traversal-attrib) we sent energy along the curve network using attribs, this time we're going to use POPs.
 
