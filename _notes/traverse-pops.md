@@ -13,7 +13,7 @@ featured_image: /assets/notes/traversal-pops/nw_comp_traverse_pops.v001.jpg
 The starting curve network used in this effect is outlined [here](/notes/tendrils). It gives us a single root point from which the entire network emerges:
 
 <div class="gallery" data-columns="2">
-		<img src="/assets/notes/traversal-pops/traverse_pops_initial.closer.jpg">
+		<img src="/assets/notes/traversal-pops/traverse_pops_initial.close.jpg">
 		<img src="/assets/notes/traversal-pops/traverse_pops_initial.far.jpg">
 </div>
 
