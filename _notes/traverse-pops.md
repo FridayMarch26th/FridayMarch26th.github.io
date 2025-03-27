@@ -1,12 +1,14 @@
 ---
 title: Traversal Attribs
-subtitle: Let's make some tendrils
+subtitle: Sending particles along curve networks
 date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/traversal-pops/nw_comp_traverse_pops.v001.jpg
 ---
 
-![The finished result](/assets/notes/traversal-pops/traversal_pops-poster.gif)
+<div class="gallery" data-columns="2">
+	<img src="/assets/notes/traversal-pops/traversal_pops-poster.gif">
+</div>
 
 The starting curve network used in this effect is outlined [here](/notes/tendrils). It gives us a single root from which the entire network emerges:
 
