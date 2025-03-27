@@ -17,10 +17,7 @@ The starting curve network used in this effect is outlined [here](/notes/tendril
 		<img src="/assets/notes/traversal-pops/traverse_pops_initial.far.jpg">
 </div>
 
-In [this example](/notes/traversal-attrib) we sent energy along our curve network using attribs, this time we're going to use POPs.
-
-The crux of the effect is to position a point on a prim with a common VEX function, primuv(). Each prim has an intrinsic set of uvs, 
- only the U component of which is relevant to a polyline. We can use this U value to sample the position (and indeed any attrib) of any point along that prim, moving points along prims by offsetting our sample.
+The crux of the effect is to position a particle on a prim with a common VEX function, primuv(). Each prim has an intrinsic set of uvs, only the U component of which is relevant to a polyline. We can use this U value to sample the position (and indeed any attrib) of any point along that prim, moving particles along prims by offsetting our sample.
 
 ![PrimUV](../assets/notes/traversal-pops/primuv.gif)
 
