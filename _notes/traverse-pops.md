@@ -25,11 +25,13 @@ Matt Estela has a longer write up of the extremely useful primuv(), [here](https
 
 With this in mind, we can scatter particles onto prims, record the prim on which that particle sits, and then send it along the prim by adjusting a uv attrib and sampling with ```primuv(0, "P", i@sourceprim, v@sourceuv)```. It's not unlike what the combo of a ScatterSOP (with @sourceprim and @sourceprimuv attribs ticked) followed by an AttributeInterpolateSOP might do. Cool, but what happens when we reach the end of the prim we've been travelling along? We need to pick a new one. So...
 
-This is the POPs network. We have a POPLocation, a clump of nodes that handle the traversal logic, and a couple of nodes for point replication (more on that later).
+This is the POPs network. We have a POPLocation to source points at the root of the network, a clump of nodes that handle the prim traversal logic, and a couple of nodes for point replication (more on that later).
+
+I should also note that the network of curves is the first input of the POPNet, with all wrangles inside having their input parms set accordingly. So any references to ```foo(0,...)``` are inspecting the original curve network.
 
 ![Overview](/assets/notes/traversal-pops/traverse_pops_overview.jpg)
 
-So we spawn our points, and let the just born particles (defined with a group in the POPLocation) decide at random which of the prims connected to our starting point that they travel along. This does that:
+So, to begin we spawn our points, and let the just born particles (defined with a group in the POPLocation) decide at random which of the prims connected to our root they travel along. This does that:
 
 ![Initialize](/assets/notes/traversal-pops/traverse_pops_init.jpg)
 
@@ -39,13 +41,15 @@ We can retrieve an array of prims connected to any point with the function primp
 
 So yes, we increment the U value that we're using to sample the position on a prim, with a bit of per-particle speed randomization and adjusting for prim length as we go. Looking at this now we could probably optimize away a few of the less prone to changing values, but none the less:
 
-![Traverse](/assets/notes/traversal-pops/traverse_pops_traverse.jpg)
+![Traverse](/assets/notes/traversal-pops/traverse_pops_inc_u.jpg)
 
 We now have all the information we need to sample the position, so let's do that. The position, and a normal to orient the particle in the direction of the curve (created with an OrientAlongCurveSOP on the sampled curve network):
 
 ![Apply attribs](/assets/notes/traversal-pops/traverse_pops_apply.jpg)
 
 But what about when we approach a junction? We need to pick a new prim. Here's how.
+
+![Apply attribs](/assets/notes/traversal-pops/traverse_pops_reinit.jpg)
 
 Any point with a U value greater than one has effectively moved beyond the end of the prim that it's been travelling along, so we can use this to find all the particles that need to choose their next prim. Now, in a similiar way as when picking our initial prim, we can now look up the prims connected to thisthe final point of our *current* prim, and start the process again. We pick a new prim, we reset the uv, we continue onward.
 
@@ -56,8 +60,8 @@ BUT. One more thing? As mentioned earlier, a common problem with branching struc
 So in this instance, rather than having a particle decide which branch to travel down, we can spawn sufficient particles in order to simaultaniously send something along each downstream prim. Why not.
 
 <div class="gallery" data-columns="2">
-	<img src="/assets/notes/traversal-pops/traverse_pops_branch_source.jpg">
-	<img src="/assets/notes/traversal-pops/traverse_pops_initbranches.jpg">	
+	<img src="/assets/notes/traversal-pops/traverse_pops_replicate.jpg">
+	<img src="/assets/notes/traversal-pops/traverse_pops_replicants.jpg">	
 </div>
 
-We use a *branch_emission* attrib that dictates how many replicants will be spawned, and then we cycle though our array of connected prims to send the new particles on their way.
+We use a *branch_count* attrib that dictates how many replicants will be spawned, and then we cycle though our array of connected prims to send the new particles on their way.
