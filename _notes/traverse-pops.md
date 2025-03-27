@@ -10,7 +10,7 @@ featured_image: /assets/notes/traversal-pops/nw_comp_traverse_pops.v001.jpg
 	<img src="/assets/notes/traversal-pops/traversal_pops-poster.gif">
 </div>
 
-The starting curve network used in this effect is outlined [here](/notes/tendrils). It gives us a single root point from which the entire network emerges:
+The starting curve network used in this effect is outlined [here](/notes/tendrils). It gives us a single root from which the entire network emerges:
 
 <div class="gallery" data-columns="2">
 		<img src="/assets/notes/traversal-pops/traverse_pops_initial.close.jpg">
@@ -23,7 +23,7 @@ The crux of the effect is to position a particle on a prim with a common VEX fun
 
 Matt Estela has a longer write up of the extremely useful primuv(), [here](https://tokeru.com/cgwiki/JoyOfVex19.html).
 
-So with this in mind, we can scatter a point onto a prim, record the prim on which that point sits, and then send it along that prim by adjusting a "U" attrib and sampling with ```primuv(0, "P", i@sourceprim, v@sourceuv)```. It's not unlike what a combo of the ScatterSOP (with @sourceprim and @sourceprimuv attribs ticked) followed by an AttributeInterpolateSOP might do, but what happens when we get to the end of the prim in a network? We need to pick a new one. So...
+With this in mind, we can scatter particles onto prims, record the prim on which that particle sits, and then send it along the prim by adjusting a uv attrib and sampling with ```primuv(0, "P", i@sourceprim, v@sourceuv)```. It's not unlike what the combo of a ScatterSOP (with @sourceprim and @sourceprimuv attribs ticked) followed by an AttributeInterpolateSOP might do. Cool, but what happens when we reach the end of the prim we've been travelling along? We need to pick a new one. So...
 
 This is the POPs network. We have a POPLocation, a clump of nodes that handle the traversal logic, and a couple of nodes for point replication (more on that later).
 
