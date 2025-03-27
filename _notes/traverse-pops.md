@@ -67,3 +67,5 @@ So in this instance, rather than having a particle decide which branch to travel
 </div>
 
 We use a *branch_count* attrib that dictates how many replicants will be spawned, and then we cycle though our array of connected prims to send the new particles on their way.
+
+As a final tip. For easy dashed line geo, stuck the group syntax ```*:n``` into the "Cut Points" parm of a PolyCutSOP. Assuming you've sufficient resolution to support your desired look it's an easy win.
