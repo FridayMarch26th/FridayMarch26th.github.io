@@ -32,16 +32,16 @@ Next, a solver with three simple steps:
 
 Step 1. Once every second, add our root point to the leaders group and give it an energy of 1.0:
 
-![Solver step 1](/assets/notes/traversal-attribs-solver1.jpg)
+![Solver step 1](/assets/notes/traversal-attrib/traversal-attribs-solver1.jpg)
 
 Step 2. For every leader, pick the first point in that leader's children array (the lookup we created earlier). Make the selected child point a leader, and give it an energy value of 1.0. We then move the energized child to the end of the array (this has no effect on points with only a single child). We could also pick children at random, but I liked the result of cycling through the array that we see at the top of the page. With the leader's work complete, we remove it from the leaders group.
 
-![Solver step 2](/assets/notes/traversal-attribs-solver2.jpg)
+![Solver step 2](/assets/notes/traversal-attrib/traversal-attribs-solver2.jpg)
 
 Step 3. Finally, we multiply down the energy to fade it out over time.
-![Solver step 3](/assets/notes/traversal-attribs-solver3.jpg)
+![Solver step 3](/assets/notes/traversal-attrib/traversal-attribs-solver3.jpg)
 
 One limition of this setup is that the speed of traversal relies on the density of points on a prim. A hasty way to increase the speed of animation would be to loop through the Solver more than once, like this:
-![Faster](/assets/notes/traversal-faster.jpg)
+![Faster](/assets/notes/traversal-attrib/traversal-faster.jpg)
 
 The last thing would be to inspect the energy attrib outside of the solver watch a nice flow of energy over the network, radiating out from the root.
