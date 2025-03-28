@@ -9,7 +9,7 @@ collections:
     permalink: /:name
   posts:
     output: true
-    permalink: /posts/:slug
+    permalink: /work/:slug
   notes:
     output: true
     permalink: /notes/:slug    
