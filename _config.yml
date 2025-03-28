@@ -29,7 +29,7 @@ defaults:
   -
     scope:
       path: ""
-      type: "posts"
+      type: "work"
     values:
       layout: "post" 
   -
@@ -53,5 +53,5 @@ plugins:
   - jekyll-sitemap
 
 paginate: 6
-paginate_path: "/posts/page:num/"
+paginate_path: "/work/page:num/"
   
