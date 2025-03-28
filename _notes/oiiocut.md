@@ -2,7 +2,7 @@
 title: Cut
 subtitle: Cutting large textures into UDIM tiles.
 description:
-date: 2023-02-10 00:00:00
+date: 2021-02-10 00:00:00
 featured_image: /assets/notes/misc/oiiocut.jpg
 ---
 

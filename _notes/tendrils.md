@@ -1,7 +1,7 @@
 ---
 title: Tendrils #1
 subtitle: With the FindShortestPathsSOP
-date: 2017-07-30 00:00:00
+date: 2024-07-30 00:00:00
 description:
 featured_image: /assets/notes/tendrils/nw_comp_tendrils.v001.jpg
 ---

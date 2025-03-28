@@ -1,7 +1,7 @@
 ---
 title: Attribute Traversal
 subtitle: I think this is an infection setup. I forget.
-date: 2017-07-30 00:00:00
+date: 2024-07-30 00:00:00
 description:
 featured_image: /assets/notes/traversal-attrib/travesal_poster.jpg
 ---

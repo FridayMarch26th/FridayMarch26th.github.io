@@ -5,7 +5,6 @@ subtitle: Stufgf I've encountered that I wanted to keep
 date: 2023-02-10 00:00:00
 ---
 
-
 ![Reference pic](assets/genus.webp)
 
 Find the "genus"(boundary groups) of geo:

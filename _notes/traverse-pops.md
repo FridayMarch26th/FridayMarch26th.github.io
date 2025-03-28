@@ -1,7 +1,7 @@
 ---
 title: POPs Traversal
 subtitle: Moving particles along curve networks.
-date: 2017-07-30 00:00:00
+date: 2024-07-30 00:00:00
 description:
 featured_image: /assets/notes/traversal-pops/nw_comp_traverse_pops.v001.jpg
 ---

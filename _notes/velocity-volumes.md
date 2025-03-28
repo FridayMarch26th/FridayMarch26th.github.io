@@ -1,7 +1,7 @@
 ---
 title: Velocity Volumes
 subtitle: Pushing POPs along a path
-date: 2017-07-30 00:00:00
+date: 2024-07-30 00:00:00
 description:
 featured_image: /assets/notes/velocity/velocity_poster.jpg
 ---

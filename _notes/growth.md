@@ -1,7 +1,7 @@
 ---
 title: Surface growth
 subtitle: Another day, another tendril setup.
-date: 2017-07-30 00:00:00
+date: 2024-07-30 00:00:00
 description:
 featured_image: /assets/notes/growth/nw_comp_growth.v001.jpg
 ---
