@@ -1,6 +1,6 @@
 ---
 title: Attribute Traversal
-subtitle: I *think* this is an infection setup
+subtitle: I think this is an infection setup. I forget.
 date: 2017-07-30 00:00:00
 description:
 featured_image: /assets/notes/traversal-attrib/travesal_poster.jpg
@@ -8,21 +8,23 @@ featured_image: /assets/notes/traversal-attrib/travesal_poster.jpg
 
 ![The finished result](/assets/notes/traversal-attrib/traversal_attrib.gif)
 
-This example starts with a 2D curve network. The input to the FindShortestPathSOP is created via a circleSOP and then a VoronoiFractureSOP, with a bias favouring end points further away from the origin to give smaller tips to the longer main branches.
+This example starts with a 2D curve network.
+
+The input to the FindShortestPathSOP is created via a circleSOP and then a VoronoiFractureSOP, with a bias favouring end points further away from the origin to give smaller tips to the longer main branches.
 
 Beyond the typical cleanup (SubdivideSop, FuseSOP, PolyPathSOP...) we need a few things before we feed the network into a SolverSOP:
 
 ![Presolve](/assets/notes/traversal-attrib/traversal-attribs-presolve.jpg)
 
-The crux of the effect relies on activating points based on their connected neighbours. With every step, we define points at the leading edge of an energy pulse, fill them with energy, and then we use these leading points to activate the leaders in the next step.
+The crux of the effect relies on activating points based on their connected neighbours. With every step, we define points next to the leading edge of an energy pulse, fill them with energy, and then we use these new leading points to activate the leaders in the *next* step. Rinse and repeat.
 
-So we need a "leaders" group that contains our point 0. We also create an attribute to contain the energy, and set the energy of the leading group to 1.0.
+So we need a "leaders" group that contains our root point 0 (as with other examples, the network has a single root). We also create an attribute to contain the energy, and set the energy of the leading group to 1.0.
 
-The final piece of setup is the creation of an array attrib to hold all of a point's downstream connections. Best to do this before animation begins so that we're not continiually recomputing values that never change. Let's store them here for a simple lookup later on:
+The final piece of setup is the creation of an array attrib to hold all of a point's downstream connections. Best to do this before animation begins so that we're not continiually recomputing values that never change. Instead, let's store them for a simple lookup later on:
 
 ![Lookup](/assets/notes/traversal-attrib/traversal-attribs-lookup.jpg)
 
-The general principle is to define a set of points that each leader can pass energy to. We use connectivity here, but many other relationships exist. How about defining a "Look At" vector with a cone angle to identify neighbours, useful for points that are not connected.
+The general principle is to define a set of points that each point can pass energy to. We use connectivity information here, but many other relationships exist. I've also had interesting results when defining a "Look At" vector with a cone angle to identify neighbours, useful for points that are not geometrically connected.
 
 Next, a solver with three simple steps:
 
