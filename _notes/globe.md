@@ -11,7 +11,7 @@ A while ago I began to research a project based upon high-speed camera descents 
 
 I was tasked with looking at solutions for 3D topographic detail, and planetary clouds.
 
-Unfortauntely it's a project that never came to fruition, so we never reached the final frame, but enough work was completed to warrent some notes.
+Unfortunately it's a project that never came to fruition, so we never reached the final frame, but enough work was completed to warrent some notes.
 
 ### Arnold
 Also, it's worth mentioning that some of the notes are specific to Arnold, being the render that would be used in production.
