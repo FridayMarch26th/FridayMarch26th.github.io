@@ -30,10 +30,11 @@ Next, a solver with three simple steps:
 
 ![Solver Overview](/assets/notes/traversal-attrib/traversal-attribs-solver.jpg)
 
-Step 1. Once every second, add our root point to the leadesr group and an energy of 1.0.
+Step 1. Once every second, add our root point to the leadesr group and an energy of 1.0:
 ![Solver step 1](/assets/notes/traversal-attribs-solver1.jpg)
 
 Step 2. For every leader, pick the first point in that leader's children array. Make *it* a leader, and give it an energy value of 1.0. We then move the energized child to the back of the queue (or back to the front in the case of a point with one child). We could also pick children at random, but I liked the result seen here. With the leader's work complete, we remove it from the leaders group.
+
 ![Solver step 2](/assets/notes/traversal-attribs-solver2.jpg)
 
 Step 3. We multiply down the energy to fade it out over time.
