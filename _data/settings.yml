@@ -9,10 +9,12 @@ header_settings:
 
 menu_settings:
   menu_items:      
-    - title: 'Posts'
-      url: '/posts'   
+    - title: 'Work'
+      url: '/Work'   
     - title: 'About'
-      url: '/about'         
+      url: '/about'
+    - title: 'Notes'
+      url: '/Notes'               
 
 grid_settings:
   overlay_opacity: 0.8
