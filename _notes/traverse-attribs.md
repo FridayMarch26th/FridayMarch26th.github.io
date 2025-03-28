@@ -24,7 +24,7 @@ The final piece of setup is the creation of an array attrib to hold all of a poi
 
 ![Lookup](/assets/notes/traversal-attrib/traversal-attribs-lookup.jpg)
 
-The general principle is to define a set of points that each point can pass energy to. We use connectivity information here, but many other relationships exist. I've also had interesting results when defining a "Look At" vector with a cone angle to identify neighbours, useful for points that are not geometrically connected.
+The general principle is that we're defining a set of subsequent points that each point can pass energy to. We use connectivity information here, but many other relationships exist. I've also had interesting results when defining a "Look At" vector with a cone angle to identify neighbours, useful for points that are not geometrically connected.
 
 Next, a solver with three simple steps:
 
