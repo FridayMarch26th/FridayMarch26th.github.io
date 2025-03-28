@@ -7,8 +7,9 @@ featured_image: /images/social.jpg
 
 <section class="blog">
 	<div class="content-wrap blog-wrap">
-
-		{% for note in site.notes %}
+	
+		{% assign notes = site.notes | sort: 'date' | reverse %}
+		{% for note in notes %}
 
 		<article class="blog-post">
 
