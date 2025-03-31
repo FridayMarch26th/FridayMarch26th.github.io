@@ -20,3 +20,6 @@ Plum the google notes
 Clip by noise in H20.5
 
 Igor's volume stuff.
+
+Extract transform > transform adjacent pieces. Reduce the transform of a piece down to a point, make sure naming is same across the nodes that require naming otherwise it will result in weird deformations.
+![Extract transform](/assets/misc/transform_pieces.png)
