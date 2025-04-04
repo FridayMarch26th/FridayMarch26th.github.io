@@ -27,6 +27,9 @@ Capture cleanup to work with copes.
 
 Velocity stretch to orient particles inside a volume.
 
-Radeon tech rnders - city thigns.
+
 
 Dashed lines
+
+Ad hoc groups exmaple
+ getbbox_center ( 0, sprintf ( "@class=%s", cls ) );
