@@ -29,7 +29,7 @@ defaults:
   -
     scope:
       path: ""
-      type: "work"
+      type: "post"
     values:
       layout: "post" 
   -
