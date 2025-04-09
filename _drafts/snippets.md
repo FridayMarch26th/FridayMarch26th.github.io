@@ -20,3 +20,6 @@ Plum the google notes
 Clip by noise in H20.5
 
 Igor's volume stuff.
+
+How to get contact between an animated card and the ground for an entire sequence.
+isolate tires to prevent heavy geo - trail - timeshift - vdb/poly - group by object
