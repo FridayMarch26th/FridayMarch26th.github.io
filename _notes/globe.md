@@ -9,9 +9,8 @@ featured_image: /assets/notes/misc/globe.jpg
 WIP - I've stuck this up quickly and plan on returning to tidy some stuff up. It will almost certainly make no sense, but if it does and is of interest then drop me a note and I can give you the sensible version. Cheers.
 
 ## Intro
-A while ago I began to research a project based upon high-speed camera descents from outerspace to a few kilometers away from the Earth's surface. 
-
-
+A while ago I began to research a project based upon high-speed camera descents from outerspace to a few kilometers away from the Earth's surface. Shots baserd on this underlying idea:
+![UV Descent](../assets/notes/globe/globe_uv_patch.gif)
 
 I was tasked with looking at solutions for 3D topographic detail, planetary clouds, and camera animation.
 
