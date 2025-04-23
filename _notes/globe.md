@@ -11,7 +11,7 @@ WIP - I've stuck this up quickly and plan on returning to tidy some stuff up. It
 ## Intro
 A while ago I began to research a project based upon high-speed camera descents from outerspace to a few kilometers away from the Earth's surface. 
 
-![Descent](../assets/notes/globe/descent.gif)
+
 
 I was tasked with looking at solutions for 3D topographic detail, planetary clouds, and camera animation.
 
