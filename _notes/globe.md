@@ -11,12 +11,14 @@ WIP - I've stuck this up quickly and plan on returning to tidy some stuff up. It
 ## Intro
 A while ago I began to research a project based upon high-speed camera descents from outerspace to a few kilometers away from the Earth's surface. 
 
-I was tasked with looking at solutions for 3D topographic detail, and planetary clouds.
+![Descent](../assets/notes/globe/descent.gif)
 
-Unfortunately it's a project that never came to fruition, so we never reached the final frame, but enough work was completed to warrent some notes.
+I was tasked with looking at solutions for 3D topographic detail, planetary clouds, and camera animation.
+
+Unfortunately it's a project that never came to fruition, but enough work was completed to warrent some notes.
 
 ### Arnold
-Also, it's worth mentioning that some of the notes are specific to Arnold, being the render that would be used in production.
+Also, it's worth mentioning that some of the notes are specific to Arnold, that being the production renderer.
 
 ## TOPOGRAPHIC DETAIL - DEM
 
