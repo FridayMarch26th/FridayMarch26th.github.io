@@ -21,11 +21,11 @@ Also, it's worth mentioning that some of the notes are specific to Arnold, that 
 
 ## TOPOGRAPHIC DETAIL - DEM
 
-A helpful colleague pointed me toward DEM datasets that are available from the NASA website. 
+Early into research we were entertaining the possibility of zooming into real-world topographic detail, after a helpful colleague pointed me toward "Digital Elevation Model" (DEM) datasets that are available from the NASA website. 
 
-Each dataset is comprised of image tiles sourced from satelites scanning the globe at regular intervals, and amongst other things they can be used to drive displacement.
+Each dataset is comprised of image tiles sourced from satelites scanning the globe at regular intervals, and given that it's elevation data being encoded we can use these tiles to drive displacement.
 
-[One particular set](https://search.earthdata.nasa.gov/search/granules?p=C1711961296-LPCLOUD&pg[0][v]=f&pg[0][gsk]=-start_date&fi=ASTER&tl=1703889672.142!3!!) offered a level of quality that satisfied the production resolution given the proximity of the camera to the Earth's surface:
+[One set](https://search.earthdata.nasa.gov/search/granules?p=C1711961296-LPCLOUD&pg[0][v]=f&pg[0][gsk]=-start_date&fi=ASTER&tl=1703889672.142!3!!) offered high-resolution maps (still not height enough, given the destination") that were particularly interesting.
 
 What a resource! BUT, we've just downloaded shy of 23k images and around 400GB of data. Yowza.
 
