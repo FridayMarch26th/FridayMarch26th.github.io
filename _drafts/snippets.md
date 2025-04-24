@@ -31,3 +31,9 @@ https://www.youtube.com/watch?v=2ws-oTnUDcg
 
 I ran into this alongside the description "classic technique, nicely explained". It is totally that. https://youtu.be/1gIZJ7xmJ_g?si=9SPlttfx8F0npdUo
 
+This is the best beginners guide to Solaris I've seen:
+https://www.youtube.com/watch?v=WfC16LYYIAw
+
+
+One to come back to:
+https://www.youtube.com/watch?v=FyhR1VYJ3N4
