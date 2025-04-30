@@ -88,3 +88,6 @@ Heron's rule and other insights...
 Brian McLogan's easy breakdown of pythagorean identities:
 
 [Memorize the Pythagorean Identities](https://www.youtube.com/watch?v=62IBpkPBnPs)
+
+Just the following, with Southern Drawl and tattooed hands. What's not to love?
+[Find trigonometric ratios using a Pythagorean or reciprocal identity](https://www.youtube.com/watch?v=vsfkZTShBqM)
