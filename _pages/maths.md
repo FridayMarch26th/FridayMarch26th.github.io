@@ -85,4 +85,4 @@ Heron's rule and other insights...
 ---
 
 Brian McLogan's easy breakdown of pythagorean identities:
-[Mathologer on Heron's rules](https://www.youtube.com/watch?v=62IBpkPBnPs)
+[Memorize the Pythagorean Identities](https://www.youtube.com/watch?v=62IBpkPBnPs)
