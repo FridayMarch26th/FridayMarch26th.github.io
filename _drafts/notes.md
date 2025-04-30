@@ -32,4 +32,8 @@ Velocity stretch to orient particles inside a volume.
 Dashed lines
 
 Ad hoc groups exmaple
+ 
  getbbox_center ( 0, sprintf ( "@class=%s", cls ) );
+
+ Nice Nuke comp dof video
+ https://www.youtube.com/watch?v=HTM59OFuQfQ
