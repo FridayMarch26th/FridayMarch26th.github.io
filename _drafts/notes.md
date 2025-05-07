@@ -11,6 +11,8 @@ i@nearPt = nearpoint("unwrap:uv opinput:0",chv("uv_coordinate"));
 
 https://terrytao.wordpress.com/
 
+![alt text](../assets/notes/misc/roonie_vorticity.png)
+
 Blester circuits
 
 min()

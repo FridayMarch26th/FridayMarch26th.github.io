@@ -1,59 +1,71 @@
 ---
-title: Traversal Attribs
-subtitle: Let's make some tendrils
-date: 2017-07-30 00:00:00
+title: POPs Traversal
+subtitle: Moving particles along curve networks.
+date: 2024-07-30 00:00:00
 description:
 featured_image: /assets/notes/traversal-pops/nw_comp_traverse_pops.v001.jpg
 ---
 
-![The finished result](/assets/notes/traversal-pops/traversal_pops-poster.gif)
+<div class="gallery" data-columns="2">
+	<img src="/assets/notes/traversal-pops/traversal_pops-poster.gif">
+</div>
 
 The starting curve network used in this effect is outlined [here](/notes/tendrils). It gives us a single root from which the entire network emerges:
 
-![Root](/assets/notes/traversal-pops/root.jpg)
+<div class="gallery" data-columns="2">
+		<img src="/assets/notes/traversal-pops/traverse_pops_initial.close.jpg">
+		<img src="/assets/notes/traversal-pops/traverse_pops_initial.far.jpg">
+</div>
 
-In [this example](/notes/traversal-attrib) we sent energy along the curve network using attribs, this time we're going to use POPs.
-
-The crux of the effect is to send a point along a prim with a common VEX function, primuv(). Each polyline prim has an intrinsic value along it ranging between zero and one. We can use this value to sample the position of any point along that prim, and we can move points along prims by offsetting that value.
+The crux of the effect is to position a particle on a prim with a straightforward VEX function, primuv(). Each prim has an intrinsic set of uvs (with only the U component of relevant to a polyline), giving us a nice normalized range to work with. We can use this range to sample the position (...and potentially other things) at any point along a prim.
 
 ![PrimUV](../assets/notes/traversal-pops/primuv.gif)
 
 Matt Estela has a longer write up of the extremely useful primuv(), [here](https://tokeru.com/cgwiki/JoyOfVex19.html).
 
-So with this, we can scatter a point onto a prim, and then send it along that prim by adjusting a "U" attrib. It's not unlike what a combo of the ScatterSOP (with @sourceprim and @sourcepimuv attribs) and an AttributeInterpolateSOP might do, but what happens when we get to the end of the prim? We need to pick the next one. Here we go.
+With this in mind we can scatter particles onto prims, record the prim on which each particle sits, and then send particles along their prims by sampling with an offset U attrib along the lines of ```primuv(0, "P", i@sourceprim, v@sourceuv)```. It's not unlike what the combo of a ScatterSOP (with sourceprim and sourceprimuv attribs ticked) followed by an AttributeInterpolateSOP might do. 
 
-This is POPs network. We have a PopLocation, a clump of nodes that make up the traversal logic, and a couple of nodes for point replication (currently bypassed, we'll get there in a bit).
+That's all very well, but what happens when we reach the end of the prim we've been travelling along? We need to pick a new one.
+
+This is the POPs network. We have a POPLocation to source points at the root of the network, a clump of nodes that handle the prim traversal logic, and a couple of nodes for point replication (more on that later).
+
+I should also note that the network of curves is the first input of the POPNet, with all wrangles inside having their input parms set accordingly. So any references to ```foo(0,...)``` inspect the original curve network.
 
 ![Overview](/assets/notes/traversal-pops/traverse_pops_overview.jpg)
 
-We must first source some points, and let the just-born (defined with a group in the POPLocation) particles decide at random which of the prims connecting to our root point that they travel along. This does that:
+So, to begin we spawn our points, and let the just born particles (defined with a group in the POPLocation) decide at random which of the prims connected to our root they travel along. This does that:
 
 ![Initialize](/assets/notes/traversal-pops/traverse_pops_init.jpg)
 
-We can find an array of prims connected to any point with the function primpoints(). We've picked one prim from this array at random,and then primuv our way along it.
+It's worth noting that I've taken advantage of the fact the POPLocation defaults to spawn particles at the world origin, which happens to co-incide with single our root point. Fine for now, but something to keep in mind.
 
-Here we increment the value that we're using to sample the position on a prim, with a bit of per-particle randomization and adjusting for primlength length as we go. Looking at this now we could probably optimize away a few of the non-regularly changing values, but none the less:
+We retrieve an array of prims connected to our root point with the function primpoints(). From this array we pick a random prim, and then we primuv() our way along it. Hooyah.
 
-![Traverse](/assets/notes/traversal-pops/traverse_pops_traverse.jpg)
+So yes, we increment the U value that we're using to sample the position on a prim, with a bit of per-particle speed randomization and adjusting for prim length as we go. Looking at this we could probably optimize away a few of the less prone-to-changing values were performance to become an issue, but for now:
 
-And then we can lookup the values that we need. The position, and a normal to orient the particle on the curve (created with an OrientAlongCurveSOP on the curve network):
+![Traverse](/assets/notes/traversal-pops/traverse_pops_inc_u.jpg)
+
+We now have all the information we need to sample the position, so let's do that. We read the position, and a normal to orient the particle in the direction of the curve (created with an OrientAlongCurveSOP on the sampled curve network):
 
 ![Apply attribs](/assets/notes/traversal-pops/traverse_pops_apply.jpg)
 
-But what about when we approach a function, more descisions required. Any point with a uv value above one has effectively moved beyond the end of the prim it's been trvelling along. Now, in much the same way as the initial descision, we can now query the prims connected to this final point and start the process again. We pick a new prim, we reset the uv, we continue onward.
+But what about when we arrive at a junction? We need to pick a new prim. Here's how:
 
-The only additional constraint is waht to do if the point is a terminal, if it has now connecting prims. Well... In which case there's nowhere to go and the prim can be safely killed off.
+![Apply attribs](/assets/notes/traversal-pops/traverse_pops_reinit.jpg)
 
-NOW. One more thing. As mentiuoned earlier a common problem with this effect is that the density of particles reduces as the journey onward, the particles thin out through suvsequant generations of branches, until there aren't many left toward the leaves.
+Any point with a U value greater than 1.0 has effectively moved beyond the end of the prim that it's been travelling along, and so we can use this to find all the particles that need to choose their next prim. Now, in a similiar way as when picking our initial prim, we can look up all prims connected to the final point of our *current* prim, restarting the traversal by sampling the start of our new choice. We pick a new prim, we reset the uv, we continue onward.
 
-So rather than having a particle decide which branch to travel down, why not have it spawn subseqaunt particles and effectviely travel along all child curves at the same time! It might come in handyt for something...
+The only additional consideration is what to do if the point is a terminal, if it has no connected prims where the U value is 1.0. Well... In which case there's nowhere to go and the point must be killed off. Here I check this by asking for an array of connected prims, and then killing off the particle if that array is empty.
 
-![Initialize branches]()
-![alt text]()
+BUT. One more thing? As mentioned earlier, a common problem with branching structures is preserving particle density. As particles radiate outwards along generations of branches they will thin out, with each descision to go one way leaving an empty branches in all other directions.
+
+So in this instance, rather than having a particle decide which branch to travel down, we will spawn sufficient particles in order to simaultaniously send something along each downstream prim. Why not.
 
 <div class="gallery" data-columns="2">
-	<img src="/assets/notes/traversal-pops/traverse_pops_branch_source.jpg">
-	<img src="/assets/notes/traversal-pops/traverse_pops_initbranches.jpg">	
+	<img src="/assets/notes/traversal-pops/traverse_pops_replicate.jpg">
+	<img src="/assets/notes/traversal-pops/traverse_pops_replicants.jpg">	
 </div>
 
-We therefore create enough new points to satisfy the numeb of connected outgoing prims, and then cycle though those prims to send the new particles on their way.
+We use a *branch_count* attrib that dictates how many replicants will be spawned, and then we cycle though our array of connected prims to send the new particles on their way.
+
+As a final tip. For easy dashed line geo, stuck the group syntax ```*:n``` into the "Cut Points" parm of a PolyCutSOP. Assuming you've sufficient resolution to support your desired look it's an easy win.

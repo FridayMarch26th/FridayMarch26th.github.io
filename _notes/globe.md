@@ -1,27 +1,30 @@
 ---
-title: World Maps
+title: Maps
 subtitle: Rough production notes
+date: 2016-07-30 00:00:00
+description:
+featured_image: /assets/notes/misc/globe.jpg
 ---
-## Intro
-A while ago I began to research a project based around high-resolution world maps.
 
-Cameras were planned to sit anywhere from outerspace, to a few kilometers away from the Earth's surface. 
+WIP - I've stuck this up quickly and plan on returning to tidy some stuff up. It will almost certainly make no sense, but if it does and is of interest then drop me a note and I can give you the sensible version. Cheers.
+
+## Intro
+A while ago I began to research a project based upon high-speed camera descents from outerspace to a few kilometers away from the Earth's surface. 
 
 I was tasked with looking at solutions for 3D topographic detail, and planetary clouds.
 
-Unfortauntely it's a project that never came to fruition, so we never reached the final frame, but enough work was completed to warrent some notes.
-
-It's also rare that encounter a contribution that isn't tedious social media banter, and with that perhaps bits of the following will be useful to a future someone.
+Unfortunately it's a project that never came to fruition, so we never reached the final frame, but enough work was completed to warrent some notes.
 
 ### Arnold
-Also, it's worth mentioning that some of the notes are specific to Arnold, being the render that would be used in prodction, but I've included them here because similar hurdles might need to be overcome regardless of renderer.
-
+Also, it's worth mentioning that some of the notes are specific to Arnold, being the render that would be used in production.
 
 ## TOPOGRAPHIC DETAIL - DEM
 
 A helpful colleague pointed me toward DEM datasets that are available from the NASA website. 
 
-They are series of image tiles sourced from satelites scanning the globe at regular intervals, and can be used to drive displacement. (One particular set)[https://search.earthdata.nasa.gov/search/granules?p=C1711961296-LPCLOUD&pg[0][v]=f&pg[0][gsk]=-start_date&fi=ASTER&tl=1703889672.142!3!!] offered a level of quality that satisfied the production resolution given the proximity of the camera to the Earth's surface:
+Each dataset is comprised of image tiles sourced from satelites scanning the globe at regular intervals, and amongst other things they can be used to drive displacement.
+
+[One particular set](https://search.earthdata.nasa.gov/search/granules?p=C1711961296-LPCLOUD&pg[0][v]=f&pg[0][gsk]=-start_date&fi=ASTER&tl=1703889672.142!3!!) offered a level of quality that satisfied the production resolution given the proximity of the camera to the Earth's surface:
 
 What a resource! BUT, we've just downloaded shy of 23k images and around 400GB of data. Yowza.
 
