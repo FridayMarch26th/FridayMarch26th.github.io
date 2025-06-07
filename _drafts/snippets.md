@@ -52,3 +52,6 @@ https://www.youtube.com/watch?v=HTM59OFuQfQ
 
 YouTubeYouTube | Pixelfudger
 Nuke - Realistic Depth of Field Defocus. Complete Guide for CLEAN edges! 
+
+Detangle
+https://www.youtube.com/watch?v=fI9UHomoeuk
