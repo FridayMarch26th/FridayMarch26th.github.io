@@ -11,3 +11,6 @@ Find the "genus"(boundary groups) of geo:
 
 string grp[] = detailintrinsic(0,"pointgroups");
 i@total = len(grp)-1;
+
+Flip bubbles
+https://youtu.be/4JDNQtIYKjM?si=dJigh8pocSLCq28r
