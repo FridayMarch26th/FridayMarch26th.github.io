@@ -9,6 +9,13 @@ SORT POINTS BY W, group range minimum separate pieces. THis will select the top 
 
 i@nearPt = nearpoint("unwrap:uv opinput:0",chv("uv_coordinate"));
 
+https://www.sidefx.com/forum/topic/68151/
+string geo = geounwrap ( 0, "uv" );
+int cls = prim ( 0, "class", @primnum );
+vector center = getbbox_center ( geo, "@class=" + itoa ( cls ) );
+@uv -= center;
+
+
 https://terrytao.wordpress.com/
 
 ![alt text](../assets/notes/misc/roonie_vorticity.png)
