@@ -25,3 +25,6 @@ It needs that approximately 16.0 value to push it through the tone-mapping curve
 
 We're not storing display referred colour, so colour started in a white that has a hard limit where our output values are saturated".
 When we store in scene referred colour, wee are storing the values as they wuld be presented in the real world.
+
+Nice display referred quote
+"There’s no extra tone mapping or exposure logic needed — it’s “ready for screen.”"
