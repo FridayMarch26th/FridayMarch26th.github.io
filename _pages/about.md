@@ -9,7 +9,6 @@ I love solving problems with computers, principally with Houdini, and I've been 
 
 I'm practically focussed, with time on the tools having always been a key measure of personal satisfaction for as long as I can remember, but I'm not averse to leading a team or helping others to reach their own goals. I LOVE talking shop and figuring out a plan of attack.
 
-Everyone appreciates a nice visual, absolutely, but as time passes I'm as happy digging into process as I am scrutinizing the end result. Whatever's useful to you is always good for me.
 
 A given week might include programming particle behavior and easing animation curves, or finding ways to distribute the format conversion of 20,000 images and developing multishot pipeline workflows between Houdini and Nuke.
 
