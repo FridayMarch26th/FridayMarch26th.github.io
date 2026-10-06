@@ -24,7 +24,3 @@ Cheers.
 nick@thiswebsite
 
 London, E7
-
-https://www.nickwood.io/
-
-Twitter: @FridayMarch26th (Hidden for now, you can hopefully understand why).
