@@ -180,12 +180,9 @@ let gl=null,uRes,uT,uG;
   const fs=sh(gl.FRAGMENT_SHADER,`precision mediump float;uniform sampler2D u;uniform vec2 res;uniform float t,g;varying vec2 v;
 float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
 void main(){vec2 dir=v-.5;vec2 d=dir;d.x*=res.x/res.y;float r2=dot(d,d);
- float ca=(.0016+g*.012)*(.35+r2*3.2);float br=(.45+r2*2.6)/res.y;
- vec3 b=vec3(0.);for(int i=0;i<8;i++){float a=float(i)*.7854;vec2 o=vec2(cos(a),sin(a))*br;
-  b.r+=texture2D(u,v+o+dir*ca).r;b.g+=texture2D(u,v+o).g;b.b+=texture2D(u,v+o-dir*ca).b;}
- b/=8.;vec3 s=vec3(texture2D(u,v+dir*ca).r,texture2D(u,v).g,texture2D(u,v-dir*ca).b);
- vec3 c=mix(s,b,.4+.6*clamp(r2*2.4,0.,1.));
- c+=b*.18;c*=1.-r2*.5;c+=(h(v*res+fract(t*7.)*91.)-.5)*.03;gl_FragColor=vec4(c,1.);}`);
+ float ca=(.0016+g*.012)*(.35+r2*3.2);
+ vec3 c=vec3(texture2D(u,v+dir*ca).r,texture2D(u,v).g,texture2D(u,v-dir*ca).b);
+ c*=1.-r2*.5;c+=(h(v*res+fract(t*7.)*91.)-.5)*.03;gl_FragColor=vec4(c,1.);}`);
   const pr=gl.createProgram();if(vs&&fs){gl.attachShader(pr,vs);gl.attachShader(pr,fs);gl.linkProgram(pr)}
   if(!vs||!fs||!gl.getProgramParameter(pr,gl.LINK_STATUS))gl=null;
   else{gl.useProgram(pr);const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
