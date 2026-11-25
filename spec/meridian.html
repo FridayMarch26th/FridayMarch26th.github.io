@@ -168,7 +168,7 @@ const $=id=>document.getElementById(id);
 const G=$('c'),C=document.createElement('canvas'),ctx=C.getContext('2d');
 const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const INK='217,236,230',ACC='#ff4632';
-let W=0,H=0,DPR=1,bg=document.createElement('canvas');
+let W=0,H=0,DPR=1,RS=1,QUAL=1,qT=0,qGood=0,bg=document.createElement('canvas');
 
 const FONTS=['Martian Mono','JetBrains Mono','Azeret Mono','Space Mono','Share Tech Mono'];let FI=0,FONT='"Martian Mono",monospace';
 function setFont(i){FI=(i+FONTS.length)%FONTS.length;FONT=`"${FONTS[FI]}",monospace`;document.documentElement.style.setProperty('--f',FONT);$('fontn').textContent=FONTS[FI];$('fontb').querySelector('b').textContent=`${FI+1}/${FONTS.length}`;try{localStorage.setItem('meridian-font',FI)}catch(e){}if(!RM){gUntil=t+.12}}
@@ -261,7 +261,7 @@ function spawn(x,y,n,dx=0,dy=0,small=false){
  for(let k=0;k<n&&pool.length;k++)pool.splice(Math.random()*pool.length|0,1)[0].dying=true;
  if(!small)shocks.push({x,y,t0:t,k:1});if(!RM&&!small)gUntil=t+.1;mapDirty=true}
 function buildBg(){
- bg.width=W*DPR;bg.height=H*DPR;const b=bg.getContext('2d');b.setTransform(DPR,0,0,DPR,0,0);
+ bg.width=Math.round(W*RS);bg.height=Math.round(H*RS);const b=bg.getContext('2d');b.setTransform(RS,0,0,RS,0,0);
  b.strokeStyle=`rgba(${INK},.11)`;b.lineWidth=1;b.beginPath();
  for(let x=64;x<W;x+=64)for(let y=64;y<H;y+=64){b.moveTo(x-3,y+.5);b.lineTo(x+3,y+.5);b.moveTo(x+.5,y-3);b.lineTo(x+.5,y+3)}
  b.stroke();
@@ -272,9 +272,15 @@ function buildBg(){
  b.strokeStyle=`rgba(${INK},.07)`;b.setLineDash([2,6]);b.beginPath();b.arc(W/2,H/2,Math.min(W,H)*.42,0,6.283);b.moveTo(W/2,0);b.lineTo(W/2,H);b.moveTo(0,H/2);b.lineTo(W,H/2);b.stroke();b.setLineDash([]);
 }
 
+// Scene + lens pass render at a capped pixel budget (scaled up by CSS); text layer stays at full DPR.
+const BUDGET=3.2e6;
+function setRes(){RS=Math.min(DPR,Math.sqrt(BUDGET/(W*H)))*QUAL;C.width=G.width=Math.round(W*RS);C.height=G.height=Math.round(H*RS);ctx.setTransform(RS,0,0,RS,0,0);buildBg();if(gl)gl.viewport(0,0,G.width,G.height)}
+function adapt(){const now=performance.now();if(now-qT<2500)return;
+ if(fAvg>21&&QUAL>.55){QUAL=Math.max(.55,QUAL-.15);qT=now;qGood=0;setRes()}
+ else if(fAvg<13.5&&QUAL<1){if(++qGood>8){QUAL=Math.min(1,QUAL+.15);qT=now;qGood=0;setRes()}}else qGood=0}
 function resize(){
  const first=!W;DPR=Math.min(devicePixelRatio||1,innerWidth<=700?1.5:2);W=innerWidth;H=innerHeight;
- C.width=G.width=T.width=W*DPR;C.height=G.height=T.height=H*DPR;tx2.setTransform(DPR,0,0,DPR,0,0);ctx.setTransform(DPR,0,0,DPR,0,0);buildBg();if(gl)gl.viewport(0,0,G.width,G.height);
+ T.width=W*DPR;T.height=H*DPR;tx2.setTransform(DPR,0,0,DPR,0,0);setRes();
  if(first)makePeople();else{for(const g of rings)g.R=Math.min(W,H)*(.2+(g.ph%1)*.12);for(const p of P){p.x=Math.min(W-20,Math.max(20,p.x));p.y=Math.min(H-20,Math.max(20,p.y));p.ro=rings[p.g].R*(.4+p.seed*1.1)}}
  const e=$('ecg');e.width=e.clientWidth*DPR||640;e.height=28*DPR;if(sel)requestAnimationFrame(railUpdate);
 }
@@ -351,7 +357,7 @@ function draw(now){
  if(mx>=0){ctx.strokeStyle=`rgba(${INK},.45)`;ctx.lineWidth=.8;ctx.beginPath();ctx.moveTo(mx-18,my+.5);ctx.lineTo(mx-5,my+.5);ctx.moveTo(mx+5,my+.5);ctx.lineTo(mx+18,my+.5);ctx.moveTo(mx+.5,my-18);ctx.lineTo(mx+.5,my-5);ctx.moveTo(mx+.5,my+5);ctx.lineTo(mx+.5,my+18);ctx.stroke();
   ctx.fillStyle=`rgba(${INK},.5)`;lbl(`x${String(mx|0).padStart(4,'0')} y${String(my|0).padStart(4,'0')}`,mx+10,my+28,ctx.fillStyle)}
  if(!RM&&t>gNext){gUntil=t+.06+Math.random()*.18;gNext=t+2+Math.random()*5;document.body.classList.add('gl')}
- if(t<gUntil){ctx.save();ctx.setTransform(1,0,0,1,0,0);for(let i=0;i<5;i++){const y=Math.random()*C.height,h=(2+Math.random()*28)*DPR,dx=(Math.random()-.5)*46*DPR;ctx.drawImage(C,0,y,C.width,h,dx,y,C.width,h);if(i===0){ctx.fillStyle='rgba(255,70,50,.09)';ctx.fillRect(0,y,C.width,h)}}ctx.restore()}
+ if(t<gUntil){ctx.save();ctx.setTransform(1,0,0,1,0,0);for(let i=0;i<5;i++){const y=Math.random()*C.height,h=(2+Math.random()*28)*RS,dx=(Math.random()-.5)*46*RS;ctx.drawImage(C,0,y,C.width,h,dx,y,C.width,h);if(i===0){ctx.fillStyle='rgba(255,70,50,.09)';ctx.fillRect(0,y,C.width,h)}}ctx.restore()}
  else document.body.classList.remove('gl');
 }
 
@@ -403,7 +409,7 @@ function tickPanel(dt){
  if(!tickPanel.s||now-tickPanel.s>500){tickPanel.s=now;$('ftime').textContent=fmtT(localDate(sel))+`  UTC${sel.city[4]>=0?'+':''}${sel.city[4]}`;$('mapt').textContent='T '+fmtT(new Date())}
  if(now-hexT>(RM?2000:260)){hexT=now;hexL.push(hexLine());hexL.shift();const hb=Math.random()*8|0;
   $('hex').innerHTML=hexL.map((l,k)=>{const [a,...b]=l.split('  ');const by=b.join('').split(' ');return`<u>${a}</u>  `+by.map((v,j)=>k===hexL.length-1&&j===hb?`<b>${v}</b>`:v).join(' ')+`  <u>${by.map(v=>{const n=parseInt(v,16);return n>32&&n<127?String.fromCharCode(n).replace(/[<>&]/g,'.'):'.'}).join('')}</u>`}).join('\n')}
- {const sp=$('spec'),sc=sp.getContext('2d'),sw=sp.width=sp.clientWidth*DPR,sh=sp.height=14*DPR,nb=48,bw=sw/nb;sc.clearRect(0,0,sw,sh);
+ {const sp=$('spec'),sc=sp.getContext('2d'),sw0=Math.round(sp.clientWidth*DPR),sh0=Math.round(14*DPR);if(sp.width!==sw0)sp.width=sw0;if(sp.height!==sh0)sp.height=sh0;const sw=sw0,sh=sh0,nb=48,bw=sw/nb;sc.clearRect(0,0,sw,sh);
   for(let i=0;i<nb;i++){const v=Math.abs(Math.sin(i*.37+t*2.1+sel.seed*9)*Math.cos(i*.13-t*1.3))*.8+Math.random()*.2,hh=Math.max(1,v*sh);sc.fillStyle=v>.85?ACC:`rgba(${INK},${.25+v*.5})`;sc.fillRect(i*bw,sh-hh,Math.max(1,bw-2*DPR),hh)}}
  ecgPh+=dt/1000*sel.live/60;const u=ecgPh%1,g=(c,w,a)=>a*Math.exp(-(((u-c)/w)**2));
  ecgBuf.push(g(.12,.03,.12)+g(.28,.008,-.15)+g(.3,.01,1)+g(.32,.01,-.3)+g(.55,.05,.22)+(Math.random()-.5)*.04);ecgBuf.shift();
@@ -418,7 +424,7 @@ function tickPanel(dt){
 
 let hudT=0,fAvg=16;
 function hud(dt){fAvg+=(dt-fAvg)*.05;if(performance.now()-hudT<400)return;hudT=performance.now();
- $('utc').textContent=fmtT(new Date());$('cnt').textContent=String(P.filter(p=>!p.dying).length).padStart(4,'0');if(mapDirty)mapDots();$('fps').textContent=`UTC · frame ${fAvg.toFixed(1)} ms`;
+ adapt();$('utc').textContent=fmtT(new Date());$('cnt').textContent=String(P.filter(p=>!p.dying).length).padStart(4,'0');if(mapDirty)mapDots();$('fps').textContent=`UTC · frame ${fAvg.toFixed(1)} ms`;
  const cnt=[0,0,0,0];for(const p of P)cnt[p.g]++;const mx=Math.max(...cnt);
  const tot=cnt.reduce((a,b)=>a+b,0)||1,col=f=>`hsl(${(172-f*167).toFixed(0)} ${(55+f*45).toFixed(0)}% ${(62-f*4).toFixed(0)}%)`,setB=(el,f)=>{f=Math.max(0,Math.min(1,f));el.style.width=(f*100)+'%';el.style.backgroundColor=col(f)};
  rings.forEach((g,i)=>{setB($('m'+g.name),cnt[i]/tot*2);$('v'+g.name).textContent=cnt[i]});
