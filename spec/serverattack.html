@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Server Under Attack</title>
+<style>
+/* VOICE: cold, clinical, thin-line sci-fi HUD
+   IDEA: a tactical display watching a server node being breached
+   PICTURE: wireframe core in a shell of solid black, glyph-marked shield cubes; breakers orbiting
+   COLOUR and TYPE: near-black ground, cyan shields, coral breakers, EMP in shifting hues; monospace readouts
+   LAYOUT: full-bleed canvas, small corner readouts, hint strip at the foot */
+:root{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%;background:#020609;overflow:hidden;overscroll-behavior:none}
+body{color:#8ef3ff;font:500 11px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;letter-spacing:.08em;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.fx{position:fixed;inset:0;pointer-events:none}
+.vig{background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.8) 100%)}
+.scan{background:repeating-linear-gradient(0deg,rgba(140,240,255,.03) 0 1px,transparent 1px 3px)}
+body.fx .scan{background:repeating-linear-gradient(0deg,rgba(140,240,255,.07) 0 1px,transparent 1px 3px);animation:flick .12s steps(2) infinite}
+body.fx .vig{background:radial-gradient(ellipse at center,transparent 30%,rgba(0,0,0,.92) 100%)}
+@keyframes flick{50%{opacity:.85}}
+.grain{display:none;opacity:.07;mix-blend-mode:screen;background-size:128px 128px}
+body.fx .grain{display:block;animation:grn .4s steps(4) infinite}
+@keyframes grn{0%{background-position:0 0}25%{background-position:-41px 23px}50%{background-position:17px -59px}75%{background-position:-73px -11px}100%{background-position:0 0}}
+@media(prefers-reduced-motion:reduce){body.fx .scan,body.fx .grain{animation:none}}
+.hud{position:fixed;pointer-events:none;display:grid;gap:3px}
+.tl{top:calc(env(safe-area-inset-top) + 16px);left:calc(env(safe-area-inset-left) + 16px)}
+.tr{top:calc(env(safe-area-inset-top) + 16px);right:calc(env(safe-area-inset-right) + 16px);text-align:right;justify-items:end}
+.bot{bottom:calc(env(safe-area-inset-bottom) + 16px);left:0;right:0;display:flex;justify-content:center;gap:22px;flex-wrap:wrap;color:rgba(142,243,255,.55);padding:0 16px}
+.ttl{color:#d8fdff;font-size:12px;margin-bottom:4px}
+.dim{color:rgba(142,243,255,.45)}
+.row{display:flex;gap:8px;justify-content:space-between;min-width:132px}
+.meter{width:132px;height:3px;border:1px solid rgba(142,243,255,.3);margin:1px 0 5px}
+.meter i{display:block;height:100%;width:100%;background:#8ef3ff;transition:width .2s}
+#epBar{background:#4aa0ff}
+#st{color:#d8fdff}
+#st.warn{color:#ff5c78}
+#ap,#fxb{pointer-events:auto;margin-top:8px;min-height:36px;padding:0 12px;background:rgba(2,6,9,.6);border:1px solid rgba(142,243,255,.35);color:rgba(142,243,255,.7);font:inherit;letter-spacing:inherit;cursor:pointer}
+#ap[aria-pressed=true],#fxb[aria-pressed=true]{color:#d8fdff;border-color:#8ef3ff;background:rgba(142,243,255,.12)}
+#ap:focus-visible,#fxb:focus-visible{outline:1px solid #d8fdff;outline-offset:2px}
+.br{position:fixed;width:14px;height:14px;border:1px solid rgba(142,243,255,.35);pointer-events:none}
+.b1{top:calc(env(safe-area-inset-top) + 6px);left:calc(env(safe-area-inset-left) + 6px);border-right:0;border-bottom:0}
+.b2{top:calc(env(safe-area-inset-top) + 6px);right:calc(env(safe-area-inset-right) + 6px);border-left:0;border-bottom:0}
+.b3{bottom:calc(env(safe-area-inset-bottom) + 6px);left:calc(env(safe-area-inset-left) + 6px);border-right:0;border-top:0}
+.b4{bottom:calc(env(safe-area-inset-bottom) + 6px);right:calc(env(safe-area-inset-right) + 6px);border-left:0;border-top:0}
+.fail{position:fixed;inset:0;display:none;place-items:center;background:radial-gradient(ellipse at center,rgba(2,6,9,.2),rgba(2,6,9,.75));text-align:center;cursor:pointer;touch-action:none}
+.fail.on{display:grid;animation:fin .6s ease-out}
+@keyframes fin{from{opacity:0}to{opacity:1}}
+.ft{font-size:26px;letter-spacing:.32em;color:#ff3c50;margin-bottom:10px;text-shadow:0 0 18px rgba(255,60,80,.5)}
+.fs{color:#d8fdff;max-width:300px;margin:0 auto 18px}
+.fh{color:rgba(142,243,255,.6);animation:bl 1.2s steps(2) infinite}
+@keyframes bl{50%{opacity:.25}}
+#sl.warn{color:#ff5c78}
+@media(prefers-reduced-motion:reduce){.fail.on,.fh{animation:none}}
+@media(max-width:380px){.row,.meter{min-width:110px;width:110px}.bot{gap:12px}}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="fx scan"></div>
+<div class="fx vig"></div>
+<div class="fx grain" id="grain"></div>
+<div class="br b1"></div><div class="br b2"></div><div class="br b3"></div><div class="br b4"></div>
+<div class="hud tl">
+  <div class="ttl">SRV-07 <span class="dim">// KERNEL VAULT</span></div>
+  <div class="row"><span class="dim">STATUS</span><span id="st">NOMINAL</span></div>
+  <div class="row"><span class="dim">INTEGRITY</span><span><span id="hp">100</span>%</span></div>
+  <div class="meter"><i id="hpBar"></i></div>
+  <div class="row"><span class="dim">SHIELD</span><span><span id="sh">98</span>/98</span></div>
+  <div class="meter"><i id="shBar"></i></div>
+  <div class="row"><span class="dim">OUTGROWTH</span><span id="og">000</span></div>
+  <div class="row"><span class="dim">SEALED</span><span><span id="sl">00</span>/49</span></div>
+  <div class="meter"><i id="slBar" style="width:0;background:#4aa0ff"></i></div>
+</div>
+<div class="hud tr">
+  <div class="row"><span class="dim">BREAKERS</span><span id="bk">00</span></div>
+  <div class="row"><span class="dim">NEUTRALISED</span><span id="kd">0000</span></div>
+  <div class="row"><span class="dim">SURGE</span><span><span id="ep">0</span>%</span></div>
+  <div class="meter"><i id="epBar"></i></div>
+  <button id="ap" type="button" aria-pressed="false">AUTOPILOT · OFF</button>
+  <button id="fxb" type="button" aria-pressed="false" hidden>SCREEN FX · OFF</button>
+</div>
+<div class="fail" id="fail"><div>
+  <div class="ft">ATTACK FAILED</div>
+  <div class="fs">SERVER FORTIFIED // <span id="fpc">49</span> SHIELD CUBES SEALED BEYOND REACH</div>
+  <div class="fh">TAP TO REDEPLOY</div>
+</div></div>
+<div class="hud bot"><span>SWIPE ▸ SPIN</span><span>TAP ▸ DEPLOY BREAKER</span><span class="dim">MAX 20</span></div>
+
+<script>
+{
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+let W = 0, H = 0, CX = 0, CY = 0, SC = 1, DPR = 1;
+const D = 6; // camera distance (world units)
+function resize() {
+  DPR = Math.min(2, devicePixelRatio || 1);
+  W = innerWidth; H = innerHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  CX = W / 2; CY = H / 2; SC = Math.min(Math.min(W, H) * 0.14, 124); // phone-sized scale, capped on big screens
+}
+addEventListener('resize', resize); resize();
+
+const TAU = Math.PI * 2;
+const rnd = (a, b) => b === undefined ? Math.random() * a : a + Math.random() * (b - a);
+const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
+const rMin = () => 2.05;
+const rMax = () => clamp((Math.min(W, H) / 2 - 34) / SC, 2.4, 3.8);
+
+// ---------- rotation ----------
+function rotAxis(x, y, z, a) {
+  const c = Math.cos(a), s = Math.sin(a), t = 1.0 - c;
+  return [t*x*x + c, t*x*y - s*z, t*x*z + s*y,
+          t*x*y + s*z, t*y*y + c, t*y*z - s*x,
+          t*x*z - s*y, t*y*z + s*x, t*z*z + c];
+}
+function mul(A, B) {
+  const R = new Array(9);
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++)
+    R[i*3+j] = A[i*3]*B[j] + A[i*3+1]*B[3+j] + A[i*3+2]*B[6+j];
+  return R;
+}
+function ortho(m) {
+  let ax = m[0], ay = m[1], az = m[2];
+  let l = Math.hypot(ax, ay, az); ax /= l; ay /= l; az /= l;
+  let bx = m[3], by = m[4], bz = m[5];
+  const d = ax*bx + ay*by + az*bz; bx -= ax*d; by -= ay*d; bz -= az*d;
+  l = Math.hypot(bx, by, bz); bx /= l; by /= l; bz /= l;
+  m[0]=ax; m[1]=ay; m[2]=az; m[3]=bx; m[4]=by; m[5]=bz;
+  m[6]=ay*bz - az*by; m[7]=az*bx - ax*bz; m[8]=ax*by - ay*bx;
+}
+let M = mul(rotAxis(1, 0, 0, 0.5), rotAxis(0, 1, 0, 0.65));
+function applyRot(ax, ay, az) {
+  const a = Math.hypot(ax, ay, az);
+  if (a < 1e-7) return;
+  M = mul(rotAxis(ax/a, ay/a, az/a, a), M); ortho(M);
+}
+const camV = v => [M[0]*v[0] + M[1]*v[1] + M[2]*v[2], M[3]*v[0] + M[4]*v[1] + M[5]*v[2], M[6]*v[0] + M[7]*v[1] + M[8]*v[2]];
+const objV = (x, y, z) => [M[0]*x + M[3]*y + M[6]*z, M[1]*x + M[4]*y + M[7]*z, M[2]*x + M[5]*y + M[8]*z];
+// ---------- screen FX (off by default): radial chromatic aberration, bloom, grain ----------
+let fxOn = false;
+const fxc = {};
+{ // film grain: a small noise tile baked once, animated by the compositor (cheap)
+  const g = document.createElement('canvas'); g.width = g.height = 128;
+  const gx = g.getContext('2d'), id = gx.createImageData(128, 128);
+  for (let i = 0; i < id.data.length; i += 4) { const v = Math.random()*255; id.data[i] = id.data[i+1] = id.data[i+2] = v; id.data[i+3] = 255; }
+  gx.putImageData(id, 0, 0);
+  try { document.getElementById('grain').style.backgroundImage = 'url(' + g.toDataURL() + ')'; } catch (_) {}
+}
+function setFX(on) {
+  fxOn = on; document.body.classList.toggle('fx', on);
+  const b = document.getElementById('fxb'); b.setAttribute('aria-pressed', String(on)); b.textContent = 'SCREEN FX · ' + (on ? 'ON' : 'OFF');
+  try { localStorage.setItem('srv07-fx', on ? '1' : '0'); } catch (_) {}
+}
+function fxCanvas(name, w, h) {
+  let c = fxc[name];
+  if (!c) { c = fxc[name] = document.createElement('canvas'); c.x = c.getContext('2d'); }
+  if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+  return c;
+}
+function postFX(boost) {
+  const w = cv.width, h = cv.height, cx = w/2, cy = h/2;
+  // effects work at half resolution on high-density screens: four times cheaper, and the softness suits the look
+  const fs = DPR > 1.4 ? 0.5 : 1.0, bw = Math.round(w*fs), bh = Math.round(h*fs);
+  const buf = fxCanvas('buf', bw, bh);
+  buf.x.globalCompositeOperation = 'copy'; buf.x.drawImage(cv, 0, 0, bw, bh);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h);
+  // split channels and re-stack them at slightly different scales about the centre: fringes grow towards the edges
+  const ca = 0.006 + 0.03*boost;
+  ctx.globalCompositeOperation = 'lighter';
+  [['#ff0000', 1.0 + ca], ['#00ff00', 1.0], ['#0000ff', 1.0 - ca]].forEach(([col, sc], i) => {
+    const c = fxCanvas('ch' + i, bw, bh);
+    c.x.globalCompositeOperation = 'copy'; c.x.drawImage(buf, 0, 0);
+    c.x.globalCompositeOperation = 'multiply'; c.x.fillStyle = col; c.x.fillRect(0, 0, bw, bh);
+    ctx.setTransform(sc, 0, 0, sc, cx*(1 - sc), cy*(1 - sc));
+    ctx.drawImage(c, 0, 0, w, h);
+  });
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  // bloom: a heavily downsampled copy stretched back up and added on
+  for (const [div, a] of [[6, 0.35], [16, 0.3]]) {
+    const sm = fxCanvas('bloom' + div, Math.max(1, w/div|0), Math.max(1, h/div|0));
+    sm.x.imageSmoothingEnabled = true; sm.x.globalCompositeOperation = 'copy'; sm.x.drawImage(buf, 0, 0, sm.width, sm.height);
+    ctx.globalAlpha = a + 0.3*boost; ctx.imageSmoothingEnabled = true; ctx.drawImage(sm, 0, 0, w, h);
+  }
+  ctx.globalAlpha = 1.0; ctx.globalCompositeOperation = 'source-over';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+
+// ---------- autopilot: quick, deliberate quarter/half turns like a puzzle cube turned in the hand ----------
+let autoOn = false, apSpawnT = 1.0;
+const AXES = [[1,0,0],[0,1,0],[0,0,1]];
+const ap = {phase: 'hold', t: 0, dur: 0.6, axis: [0,1,0], ang: 0, prev: 0, wob: [0.3, 0.8, 0.1]};
+const easeIO = k => k < 0.5 ? 16*k**5 : 1 - (-2*k + 2)**5/2; // quintic: softer start and settle
+function autopilot(dt) {
+  ap.t += dt;
+  if (ap.phase === 'turn') {
+    const k = Math.min(1, ap.t/ap.dur), e = easeIO(k), d = (e - ap.prev)*ap.ang; ap.prev = e;
+    applyRot(ap.axis[0]*d, ap.axis[1]*d, ap.axis[2]*d);
+    if (k >= 1) { ap.phase = 'hold'; ap.t = 0; ap.dur = rnd(0.45, 1.4); const v = [rnd(-1, 1), rnd(-1, 1), rnd(-0.3, 0.3)], l = Math.hypot(...v) || 1; ap.wob = v.map(x => x/l); }
+  } else {
+    // held and observed: a faint drift, as if in a hand
+    const w = 0.12*Math.sin(Math.PI*Math.min(1, ap.t/ap.dur))*dt;
+    applyRot(ap.wob[0]*w, ap.wob[1]*w, ap.wob[2]*w);
+    if (ap.t >= ap.dur) {
+      const r = Math.random();
+      ap.axis = r < 0.42 ? AXES[1] : r < 0.82 ? AXES[0] : r < 0.92 ? AXES[2] : (() => { const v = [rnd(-1, 1), rnd(-1, 1), rnd(-0.4, 0.4)], l = Math.hypot(...v) || 1; return v.map(x => x/l); })();
+      const half = Math.random() < 0.2;
+      ap.ang = (half ? Math.PI : Math.PI/2) * (Math.random() < 0.5 ? -1.0 : 1.0);
+      ap.dur = half ? rnd(0.75, 1.0) : rnd(0.45, 0.65);
+      ap.phase = 'turn'; ap.t = 0; ap.prev = 0;
+    }
+  }
+  wx = wy = 0.0; // no leftover inertia while the autopilot drives
+}
+function setAuto(on) {
+  autoOn = on; ap.phase = 'hold'; ap.t = 0; ap.dur = 0.3;
+  const b = document.getElementById('ap'); b.setAttribute('aria-pressed', String(on)); b.textContent = 'AUTOPILOT · ' + (on ? 'ON' : 'OFF');
+}
+const CRUISE = 0.42, spinDir = [0.22, 0.97];
+let wx = 0.04, wy = 0.18; // angular velocity, camera space, rad/s
+
+// projection: camera space x right, y up, z toward viewer
+const PJ = {x: 0, y: 0, s: 1};
+function proj(x, y, z) { const s = SC * D / (D - z); PJ.x = CX + x*s; PJ.y = CY - y*s; PJ.s = s; return PJ; }
+
+// ---------- technical glyphs (polylines in face uv, -1..1) ----------
+const circ = (cx, cy, r, a0 = 0.0, a1 = TAU, n = 14) => Array.from({length: n + 1}, (_, i) => { const a = a0 + (a1 - a0)*i/n; return [cx + Math.cos(a)*r, cy + Math.sin(a)*r]; });
+const GLYPHS = [
+  [circ(0, 0, 0.55), [[-1,0],[-0.3,0]], [[0.3,0],[1,0]], [[0,-1],[0,-0.3]], [[0,0.3],[0,1]]],           // crosshair
+  [[[-0.6,-0.7],[-0.6,0.7]], [[0,-0.7],[0,0.1]], [[0.6,-0.7],[0.6,0.7]]],                                // bars
+  [[[-0.9,-0.4],[-0.9,-0.9],[-0.4,-0.9]], [[0.4,-0.9],[0.9,-0.9],[0.9,-0.4]], [[0.9,0.4],[0.9,0.9],[0.4,0.9]], [[-0.4,0.9],[-0.9,0.9],[-0.9,0.4]]], // frame corners
+  [[[-0.7,-0.7],[0,0],[-0.7,0.7]], [[0,-0.7],[0.7,0],[0,0.7]]],                                          // chevrons
+  [[[-0.7,-0.7],[0.7,-0.7],[0.7,0.7],[-0.7,0.7],[-0.7,-0.7]], [[-0.35,0],[0.35,0]], [[0,-0.35],[0,0.35]]], // plus box
+  [circ(0, 0, 0.7), circ(0, 0, 0.15, 0, TAU, 8)],                                                         // ring + dot
+  [[[-0.8,-0.8],[-0.8,0.8]], [[-0.55,-0.8],[-0.55,0.8]], [[-0.2,-0.8],[-0.2,0.8]], [[0.05,-0.8],[0.05,0.8]], [[0.45,-0.8],[0.45,0.8]], [[0.8,-0.8],[0.8,0.8]]], // barcode
+  [[[0,0.8],[0.8,-0.6],[-0.8,-0.6],[0,0.8]], [[0,0.3],[0,-0.2]]],                                       // warning triangle
+  [circ(0, 0, 0.75, 0, TAU, 6)],                                                                          // hex
+  [[[-0.8,-0.27],[0.8,-0.27]], [[-0.8,0.27],[0.8,0.27]], [[-0.27,-0.8],[-0.27,0.8]], [[0.27,-0.8],[0.27,0.8]]], // grid
+  [circ(0, -0.3, 0.75, 0, Math.PI, 12), [[-0.75,-0.3],[0.75,-0.3]], [[0,-0.3],[0.45,0.25]]],             // gauge
+  [circ(0, -0.1, 0.65, -Math.PI*0.3, Math.PI*1.3, 14), [[0,0.1],[0,0.85]]],                              // power
+  [[[0,-0.8],[0,0.8]], [[-0.5,0.3],[0,0.8],[0.5,0.3]], [[-0.5,-0.8],[0.5,-0.8]]],                        // arrow
+  [[[-0.8,-0.5],[-0.3,-0.5],[0,0.5],[0.3,0.5],[0.8,0.5]]],                                               // pulse step
+];
+
+// ---------- shield cells (sparse grid, shell at ring 2, outgrowth to ring 6) ----------
+const P = 0.225, HC = P * 0.4, CORE = 0.225, RING_MAX = 10;
+const CO = [[-1,-1,-1],[1,-1,-1],[1,1,-1],[-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
+const FACES = [
+  {v: [1,2,6,5], n: [1,0,0],  u: [0,1,0], w: [0,0,1]},
+  {v: [0,3,7,4], n: [-1,0,0], u: [0,1,0], w: [0,0,1]},
+  {v: [3,2,6,7], n: [0,1,0],  u: [0,0,1], w: [1,0,0]},
+  {v: [0,1,5,4], n: [0,-1,0], u: [0,0,1], w: [1,0,0]},
+  {v: [4,5,6,7], n: [0,0,1],  u: [1,0,0], w: [0,1,0]},
+  {v: [0,1,2,3], n: [0,0,-1], u: [1,0,0], w: [0,1,0]},
+];
+const DIRS = [[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]];
+// growth pulses: a coloured wave from the core; new cells start growing as it reaches them
+const PSPEED = 2.0, SHELL_GR = 1.4, OUT_GR = 1.6, pulses = [];
+let pulseHue = rnd(360), pulseId = 1;
+function hsl(h, s, l) {
+  const k = n => (n + h/30) % 12, a = s*Math.min(l, 1.0 - l);
+  const f = n => l - a*Math.max(-1, Math.min(k(n) - 3, 9 - k(n), 1));
+  return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+}
+function newPulse() { pulses.push({r: 0, col: [70, 160, 255], id: ++pulseId}); return pulseId; }
+pulses.push({r: -0.6*PSPEED, col: [70, 160, 255], id: 1});
+let cells = [];
+const cmap = new Map();
+const key = (i, j, k) => (i + 12)*625 + (j + 12)*25 + (k + 12);
+const ringOf = (i, j, k) => Math.max(Math.abs(i), Math.abs(j), Math.abs(k));
+function makeCell(i, j, k, grow, life, pid) {
+  const n = Math.random() < 0.55 ? 1 : 2;
+  const fs = [0,1,2,3,4,5].sort(() => Math.random() - 0.5).slice(0, n);
+  const c = {i, j, k, ring: ringOf(i, j, k), c: [i*P, j*P, k*P], alive: true, grow, flash: 0, dead: 0, life,
+    gl: fs.map(f => ({f, g: Math.random()*GLYPHS.length|0})), pc: new Float32Array(16), z: 0, gone: false,
+    d: Math.hypot(i, j, k)*P, pid: pid || 0};
+  cells.push(c); cmap.set(key(i, j, k), c); return c;
+}
+for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++) for (let k = -2; k <= 2; k++)
+  if (ringOf(i, j, k) === 2) makeCell(i, j, k, -(0.6 + Math.hypot(i, j, k)*P/PSPEED)*SHELL_GR, Infinity, 1);
+const TOTAL = cells.length;
+
+// ---------- state ----------
+const fizz = [], ships = [], missiles = [], dots = [], impacts = [], pieces = [], beams = [];
+let coreHP = 1.0, coreFlash = 0, coreFlashCol = '255,92,120', breachT = 0;
+let empCharge = 0, empDur = rnd(8, 12), emp = null, empTint = 0, empCol = '255,61,242';
+// ---------- attack-failed criterion ----------
+// A cube is sealed when every face is buried against another cube (or the enclosed core space):
+// no missile can reach it. Too many sealed cubes means the server has outgrown the attack.
+const SEAL_FAIL = 0.5, SEAL_HOLD = 2.0; // fraction of the shell's 98, i.e. 49 sealed cubes
+let sealed = 0, sealT = 0, floodT = 0, failed = false;
+function computeSealed() {
+  let n = 0;
+  for (const c of cells) {
+    if (!c.alive || c.grow <= 0.5) continue;
+    let buried = true;
+    for (const d of DIRS) {
+      const i = c.i + d[0], j = c.j + d[1], k = c.k + d[2];
+      if (ringOf(i, j, k) < 2) continue;
+      const nb = cmap.get(key(i, j, k));
+      if (!nb || !nb.alive || nb.grow <= 0.5) { buried = false; break; }
+    }
+    if (buried) n++;
+  }
+  return n / TOTAL;
+}
+function failAttack() {
+  failed = true;
+  for (let i = ships.length - 1; i >= 0; i--) killShip(i, '70,160,255');
+  missiles.length = 0;
+  document.getElementById('fpc').textContent = Math.round(sealed*TOTAL);
+  document.getElementById('fail').classList.add('on');
+}
+function resetAttack() {
+  for (const c of cells) {
+    if (c.ring > 2) { c.gone = true; cmap.delete(key(c.i, c.j, c.k)); continue; }
+    c.alive = true; c.flash = 0; c.grow = -(0.4 + c.d/PSPEED)*SHELL_GR;
+  }
+  cells = cells.filter(c => !c.gone);
+  pulses.push({r: -0.4*PSPEED, col: [70, 160, 255], id: ++pulseId});
+  coreHP = 1.0; kills = 0; empCharge = 0; sealed = 0; sealT = 0; failed = false;
+  lastUserSpawn = now; lastAuto = now;
+  document.getElementById('fail').classList.remove('on');
+}
+document.getElementById('fail').addEventListener('click', resetAttack);
+let camZ = 1.0, camT = -1, antT = 0, surgeGlow = 0;
+let regenT = 1.0, growT = 1.0, cfT = 3.0, kills = 0, now = 0, lastUser = -10, lastUserSpawn = -6, lastAuto = 0;
+const ORANGE = '255,178,105', CYAN = [255, 52, 72], BLUE = [70, 160, 255], CORAL = '255,92,120', ICE = '170,250,255';
+const EMPC = ['255,61,242', '124,255,107', '255,200,61', '110,140,255', '61,255,230'];
+
+const MAX_SHIPS = 20, denies = [];
+let denyT = 0;
+// tapDist: screen distance from centre of the tap; the breaker flies in to exactly that point
+function spawnShip(angle, tapDist) {
+  if (failed || ships.length >= MAX_SHIPS) return false;
+  // arrives exactly where tapped, then moves over a sphere around the server hunting shield cubes
+  const L = rnd(9, 16);
+  const rT = tapDist === undefined ? rnd(rMin(), rMax()) : Math.min(tapDist / SC, rMax() + 0.6);
+  ships.push({dir: [Math.cos(angle), Math.sin(angle), 0.0], tan: [-Math.sin(angle), Math.cos(angle), 0.0], state: 'enter', tgt: null, angV: 0.0, cool: 0, reload: 0,
+    P: [0, 0, 0], r: Math.max(rMax(), rT) + 1.8, vr: 0, rT,
+    z: 0.0, kickT: 9.0, life: L, max: L, held: false, fire: rnd(0.6, 1.8), born: 0, sx: 0, sy: 0, s: SC, sz: 7, ux: 1, uy: 0});
+  return true;
+}
+function shipPos(s) { s.P[0] = s.dir[0]*s.r; s.P[1] = s.dir[1]*s.r; s.P[2] = s.dir[2]*s.r; return s.P; }
+const LOCK_PULL = 0.9;
+// pick an exposed (outer) shield cube, favouring ones already near the breaker
+function pickTarget(s) {
+  let best = null, bs = -1e9;
+  for (let t = 0; t < 18; t++) {
+    const c = cells[Math.random()*cells.length|0];
+    if (!c || !c.alive || c.grow < 0.8) continue;
+    const v = camV(c.c), l = Math.hypot(...v) || 1;
+    const sc = c.d*1.6 + 0.9*(v[0]*s.dir[0] + v[1]*s.dir[1] + v[2]*s.dir[2])/l + rnd(0.5);
+    if (sc > bs) { bs = sc; best = c; }
+  }
+  return best;
+}
+// glide over the sphere towards the target's bearing: accelerate, cruise, settle
+function trackTarget(s, dt) {
+  const v = camV(s.tgt.c), l = Math.hypot(...v) || 1, td = [v[0]/l, v[1]/l, v[2]/l], d = s.dir;
+  const cs = clamp(d[0]*td[0] + d[1]*td[1] + d[2]*td[2], -1, 1), th = Math.acos(cs);
+  const want = Math.min(1.6, th*1.7 + 0.03);       // gentler settle onto the bearing
+  s.angV += (want - s.angV) * Math.min(1, dt*1.8);  // and a slower build-up of speed
+  const step = Math.min(th, s.angV*dt);
+  if (th > 1e-4) {
+    let k = [d[1]*td[2] - d[2]*td[1], d[2]*td[0] - d[0]*td[2], d[0]*td[1] - d[1]*td[0]];
+    const kl = Math.hypot(...k);
+    if (kl < 1e-6) k = s.tan.slice(); else k = k.map(x => x/kl);
+    const c = Math.cos(step), sn = Math.sin(step);
+    const kx = [k[1]*d[2] - k[2]*d[1], k[2]*d[0] - k[0]*d[2], k[0]*d[1] - k[1]*d[0]];
+    const nd = [d[0]*c + kx[0]*sn, d[1]*c + kx[1]*sn, d[2]*c + kx[2]*sn], nl = Math.hypot(...nd);
+    const t = [td[0] - d[0]*cs, td[1] - d[1]*cs, td[2] - d[2]*cs], tl = Math.hypot(...t);
+    if (tl > 1e-3 && step > 1e-4) s.tan = t.map(x => x/tl);
+    s.dir = nd.map(x => x/nl);
+  }
+  return th;
+}
+// tiny circles radiating outward, shrinking to nothing
+function sprinkle(x, y, col, n, sp, ox, oy) {
+  for (let i = 0; i < n; i++) {
+    let a = rnd(TAU);
+    if (ox !== undefined) { const b = Math.atan2(y - oy, x - ox); a = b + rnd(-1.0, 1.0); }
+    const v = rnd(sp*0.35, sp), L = rnd(0.45, 1.0);
+    dots.push({x, y, vx: Math.cos(a)*v, vy: Math.sin(a)*v, r: rnd(1.0, 2.6), life: L, max: L, col});
+  }
+}
+function impact(x, y, col, R) { impacts.push({x, y, R, life: 0.55, max: 0.55, col}); }
+// breaker splits into a few solid pieces
+function killShip(i, col) {
+  const s = ships[i]; col = col || ORANGE;
+  const sz = s.sz, ux = s.ux, uy = s.uy, px = -uy, py = ux;
+  const T = [s.sx + ux*sz*1.5, s.sy + uy*sz*1.5];
+  const B1 = [s.sx - ux*sz*0.8 + px*sz, s.sy - uy*sz*0.8 + py*sz];
+  const B2 = [s.sx - ux*sz*0.8 - px*sz, s.sy - uy*sz*0.8 - py*sz];
+  const N = [s.sx - ux*sz*0.25, s.sy - uy*sz*0.25];
+  const mid = (a, b) => [(a[0] + b[0])/2, (a[1] + b[1])/2];
+  const m1 = mid(T, B1), m2 = mid(T, B2);
+  const tris = [[T, m1, m2], [m1, B1, N], [m2, N, B2], [m1, N, m2]];
+  for (const t of tris) {
+    const cx = (t[0][0] + t[1][0] + t[2][0])/3, cy = (t[0][1] + t[1][1] + t[2][1])/3;
+    let dx = cx - s.sx, dy = cy - s.sy; const l = Math.hypot(dx, dy) || 1;
+    const v = rnd(50, 120), L = rnd(0.7, 1.1);
+    pieces.push({x: cx, y: cy, vx: dx/l*v + rnd(-20, 20), vy: dy/l*v + rnd(-20, 20), a: 0, va: rnd(-9, 9),
+      pts: t.map(p => [p[0] - cx, p[1] - cy]), life: L, max: L, col});
+  }
+  sprinkle(s.sx, s.sy, col, 5, 70);
+  ships.splice(i, 1); kills++;
+}
+function destroyCell(cell, ix, iy) {
+  cell.alive = false; cell.dead = 0;
+  const cc = camV(cell.c), p = proj(cc[0], cc[1], cc[2]);
+  sprinkle(p.x, p.y, '255,80,96', 6, 130, ix, iy);
+  if (cell.ring > 2) { cell.gone = true; cmap.delete(key(cell.i, cell.j, cell.k)); }
+}
+// Surge: the periodic event the EMP used to occupy. Same charge timer and wind-up telegraph,
+// but it releases a blue pulse that lays down a large new layer of shield cubes. (EMP itself is off for now.)
+function frontier() {
+  const seen = new Set(), out = [];
+  for (const c of cells) {
+    if (!c.alive || c.grow < 0.5) continue;
+    for (const d of DIRS) {
+      const i = c.i + d[0], j = c.j + d[1], k = c.k + d[2], r = ringOf(i, j, k), kk = key(i, j, k);
+      if (r < 3 || r > RING_MAX || cmap.has(kk) || seen.has(kk)) continue;
+      seen.add(kk); out.push([i, j, k, r]);
+    }
+  }
+  return out;
+}
+function surge() {
+  const pid = newPulse(), fr = frontier().map(p => [p, p[3] + rnd(1.4)]).sort((a, b) => a[1] - b[1]);
+  const n = Math.min(fr.length, 50 + (Math.random()*30|0));
+  for (let q = 0; q < n; q++) { const p = fr[q][0]; makeCell(p[0], p[1], p[2], -(Math.hypot(p[0], p[1], p[2])*P/PSPEED)*OUT_GR, Infinity, pid); }
+  empCharge = 0; empDur = rnd(8, 12); coreFlash = 1.0; coreFlashCol = '70,160,255';
+  for (let i = ships.length - 1; i >= 0; i--) killShip(i, '70,160,255');
+  missiles.length = 0;
+  camT = 0; surgeGlow = 1.0; // camera shake + zoom; whole shield recolours with a glow
+}
+// EMP wind-up: the last WINDUP seconds of the charge telegraph the coming event in its colour
+const WINDUP = 2.2, motes = [];
+let nextEmpCol = '70,160,255', windup = 0, moteAcc = 0;
+function fireEMP(col) {
+  empCol = col || nextEmpCol;
+  motes.length = 0; windup = 0;
+  emp = {r: 0, max: Math.hypot(W, H)/2 + 30};
+  empTint = 1.0; empCharge = 0; empDur = rnd(16, 26);
+  coreFlash = 1.0; coreFlashCol = empCol;
+  document.getElementById('epBar').style.background = 'rgb(' + empCol + ')';
+}
+function cellAtObj(ox, oy, oz) {
+  const i = Math.round(ox/P), j = Math.round(oy/P), k = Math.round(oz/P);
+  if (ringOf(i, j, k) > RING_MAX) return null;
+  const c = cmap.get(key(i, j, k));
+  return c && c.alive && c.grow > 0.5 ? c : null;
+}
+
+// ---------- input: one-finger swipe spins, tap deploys a breaker ----------
+const ptrs = new Map();
+let pendX = 0, pendY = 0;
+cv.addEventListener('pointerdown', e => {
+  try { cv.setPointerCapture(e.pointerId); } catch (_) {}
+  ptrs.set(e.pointerId, {x: e.clientX, y: e.clientY, x0: e.clientX, y0: e.clientY, t0: performance.now(), multi: ptrs.size > 0});
+  for (const p of ptrs.values()) if (ptrs.size > 1) p.multi = true;
+  lastUser = now;
+});
+cv.addEventListener('pointermove', e => {
+  const p = ptrs.get(e.pointerId); if (!p) return;
+  const dx = e.clientX - p.x, dy = e.clientY - p.y; p.x = e.clientX; p.y = e.clientY;
+  lastUser = now;
+  if (ptrs.size === 1) { pendX += dx; pendY += dy; }
+});
+const up = e => {
+  const p = ptrs.get(e.pointerId); ptrs.delete(e.pointerId); pendX = pendY = 0;
+  if (!p || p.multi || e.type !== 'pointerup') return;
+  if (Math.hypot(e.clientX - p.x0, e.clientY - p.y0) < 10 && performance.now() - p.t0 < 350) {
+    if (!spawnShip(Math.atan2(-(e.clientY - CY), e.clientX - CX), Math.hypot(e.clientX - CX, e.clientY - CY))) { denies.push({x: e.clientX, y: e.clientY, life: 0.9}); denyT = 0.9; }
+    lastUserSpawn = now;
+  }
+};
+cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+document.getElementById('ap').addEventListener('click', () => setAuto(!autoOn));
+document.getElementById('fxb').addEventListener('click', () => setFX(!fxOn));
+// screen FX toggle hidden for now; effects stay off (code kept for later)
+setAuto(true); // autopilot is on by default every time the page opens
+addEventListener('keydown', e => {
+  if (e.key === 'a' || e.key === 'A') setAuto(!autoOn);
+  if (e.key === 'b' || e.key === 'B') { for (let i = 0; i < 6; i++) spawnShip(rnd(TAU));
+    if (ships.length >= MAX_SHIPS) { denies.push({x: CX, y: CY - rMax()*SC - 30, life: 0.9}); denyT = 0.9; } lastUserSpawn = now; }
+});
+document.addEventListener('gesturestart', e => e.preventDefault());
+document.addEventListener('touchmove', e => e.preventDefault(), {passive: false});
+
+// ---------- update ----------
+function update(dt) {
+  // autopilot also sends breakers in, in groups of one to three
+  if (autoOn && !failed) {
+    apSpawnT -= dt;
+    if (apSpawnT <= 0) {
+      apSpawnT = rnd(2.5, 5.0);
+      const base = rnd(TAU), n = 1 + (Math.random()*3|0);
+      for (let q = 0; q < n; q++) spawnShip(base + rnd(-0.45, 0.45));
+    }
+  }
+  // spin with inertia (autopilot takes over when on and the user has let go for a moment)
+  if (autoOn && !ptrs.size && now - lastUser > 2.0) autopilot(dt);
+  else if (ptrs.size === 1) {
+    const K = 0.0085, ax = pendY*K, ay = pendX*K;
+    applyRot(ax, ay, 0);
+    const iw = 1.0 / Math.max(dt, 1/120);
+    wx = wx*0.5 + ax*iw*0.5; wy = wy*0.5 + ay*iw*0.5;
+    const pl = Math.hypot(pendX, pendY); if (pl > 0.5) { spinDir[0] = pendY/pl; spinDir[1] = pendX/pl; }
+    pendX = pendY = 0;
+  } else {
+    // inertia that never quite stops: decays down to a slow cruise, in the direction of the last swipe
+    applyRot(wx*dt, wy*dt, 0);
+    let sp0 = Math.hypot(wx, wy);
+    if (sp0 > 1e-4) { spinDir[0] = wx/sp0; spinDir[1] = wy/sp0; }
+    sp0 = sp0 > CRUISE ? CRUISE + (sp0 - CRUISE)*Math.exp(-dt*0.9) : sp0 + (CRUISE - sp0)*Math.min(1, dt*0.8);
+    wx = spinDir[0]*sp0; wy = spinDir[1]*sp0;
+  }
+  const sp = Math.hypot(wx, wy); if (sp > 14) { wx *= 14/sp; wy *= 14/sp; }
+
+  // attract mode
+  if (false && !ships.length && now - lastUserSpawn > 9 && now - lastAuto > 9 && now > 3) {
+    lastAuto = now; for (let i = 0; i < 3; i++) spawnShip(rnd(TAU));
+  }
+
+  // cells: grow in, outgrowth ages and retracts
+  for (const c of cells) {
+    if (c.flash > 0) c.flash = Math.max(0, c.flash - dt*1.1);
+    if (!c.alive) { c.dead += dt; continue; }
+    if (c.ring > 2) {
+      c.life -= dt;
+      if (c.life <= 0) { c.grow -= dt*1.4; if (c.grow <= 0) { c.gone = true; c.alive = false; cmap.delete(key(c.i, c.j, c.k)); } }
+      else if (c.grow < 1) c.grow = Math.min(1, c.grow + dt*OUT_GR);
+    } else if (c.grow < 1) c.grow = Math.min(1, c.grow + dt*SHELL_GR);
+  }
+  if (cells.some(c => c.gone)) cells = cells.filter(c => !c.gone);
+
+  floodT -= dt;
+  if (floodT <= 0) { floodT = 0.3; sealed = computeSealed(); }
+  sealT = sealed >= SEAL_FAIL ? sealT + dt : Math.max(0, sealT - dt);
+  if (!failed && sealT >= SEAL_HOLD) failAttack();
+
+  // shell repair
+  regenT -= dt * (0.5 + coreHP*0.7);
+  if (regenT <= 0) {
+    regenT = rnd(0.4, 0.85);
+    const dead = cells.filter(c => !c.alive && c.dead > 1.2);
+    if (dead.length) {
+      const adj = dead.filter(c => DIRS.some(d => { const n = cmap.get(key(c.i + d[0], c.j + d[1], c.k + d[2])); return n && n.alive; }));
+      const pool = adj.length ? adj : dead, c = pool[Math.random()*pool.length|0];
+      c.alive = true; c.grow = 0; c.flash = 1.0;
+    }
+  }
+
+  // growth: sporadic clusters at random spots, plus a periodic surge that lays down a larger layer
+  for (let i = pulses.length - 1; i >= 0; i--) { pulses[i].r += PSPEED*dt; if (pulses[i].r > RING_MAX*P*1.8) pulses.splice(i, 1); }
+  growT -= dt;
+  if (growT <= 0 && !failed) {
+    growT = rnd(0.5, 0.9);
+    if (cells.length - TOTAL < 520) {
+      const fr = frontier();
+      if (fr.length) {
+        let at = fr[Math.random()*fr.length|0];
+        const n = 1 + (Math.random()*3|0);
+        for (let q = 0; q < n && at; q++) {
+          makeCell(at[0], at[1], at[2], 0, Infinity, 0).flash = 1.0;
+          const opts = DIRS.map(d => [at[0] + d[0], at[1] + d[1], at[2] + d[2]])
+            .filter(p => { const r = ringOf(...p); return r >= 3 && r <= RING_MAX && !cmap.has(key(...p)); });
+          at = opts.length ? opts[Math.random()*opts.length|0] : null;
+        }
+      }
+    }
+  }
+
+  // ships
+  for (let i = ships.length - 1; i >= 0; i--) {
+    const s = ships[i];
+    s.born = Math.min(1, s.born + dt*2.5);
+    // launched in fast, then heavy drag bleeds the speed off: position decays exponentially onto the orbit
+    s.r = s.rT + (s.r - s.rT) * Math.exp(-dt * 5.5);
+    // find target, orbit round to it, lock, fire, repeat
+    if (s.state === 'enter' && Math.abs(s.r - s.rT) < 0.2) { s.state = 'seek'; s.tgt = pickTarget(s); }
+    if (s.state !== 'enter' && s.state !== 'cool' && (!s.tgt || !s.tgt.alive || s.tgt.gone)) { s.tgt = pickTarget(s); s.state = 'seek'; }
+    if ((s.state === 'seek' || s.state === 'lock') && s.tgt) {
+      const th = s.th = trackTarget(s, dt);
+      s.reload -= dt;
+      if (th < 0.05 && s.reload <= 0) { s.state = 'lock'; s.fire = 0.0; }
+    } else s.angV *= Math.exp(-dt*6.0);
+    if (s.state === 'cool') { s.cool -= dt; if (s.cool <= 0) { s.state = 'seek'; s.tgt = pickTarget(s); } }
+    s.life -= dt; s.kickT += dt;
+    if (s.life <= 0) { killShip(i); continue; }
+    shipPos(s); const o = objV(s.P[0], s.P[1], s.P[2]);
+    if (Math.max(Math.abs(o[0]), Math.abs(o[1]), Math.abs(o[2])) < CORE) {
+      impact(s.sx, s.sy, CORAL, 18); coreHP = Math.max(0.05, coreHP - 0.08); coreFlash = 1.0; coreFlashCol = CORAL;
+      killShip(i); continue;
+    }
+    const hit = cellAtObj(o[0], o[1], o[2]);
+    if (hit) { // collision: shield cube and breaker both destroyed
+      const sx = s.sx, sy = s.sy;
+      destroyCell(hit, sx, sy); impact(sx, sy, '235,255,255', rnd(15, 20));
+      killShip(i); continue;
+    }
+    if (s.state === 'lock') {
+      s.fire -= dt;
+      if (s.fire <= 0) {
+        s.kickT = 0.0; s.reload = rnd(0.4, 0.7);
+        const q = 1.0 - 0.15/s.r, mx = s.P[0]*q, my = s.P[1]*q, mz = s.P[2]*q;
+        const [tx, ty, tz] = camV(s.tgt.c);
+        let dx = tx - mx, dy = ty - my, dz = tz - mz; const l = Math.hypot(dx, dy, dz), v = 2.6;
+        s.tgt = pickTarget(s); s.state = 'seek'; // already knows where it's heading next
+        missiles.push({x: mx, y: my, z: mz, vx: dx/l*v, vy: dy/l*v, vz: dz/l*v, t: 0, tr: [], fz: 0});
+      }
+    }
+  }
+
+  // server counter-fire
+  cfT -= dt;
+  if (false && cfT <= 0) { // server counter-fire beam: removed
+    cfT = rnd(2.4, 4.4);
+    const cand = ships.filter(s => Math.abs(s.r - s.rT) < 0.2);
+    if (cand.length) {
+      const s = cand[Math.random()*cand.length|0];
+      s.life -= s.max * 0.25;
+      beams.push({s, life: 0.3});
+      sprinkle(s.sx, s.sy, ICE, 5, 70);
+    }
+  }
+
+  // missiles
+  for (let i = missiles.length - 1; i >= 0; i--) {
+    const m = missiles[i]; m.t += dt;
+    const steps = Math.ceil(Math.hypot(m.vx, m.vy, m.vz) * dt / 0.04);
+    let gone = m.t > 4;
+    for (let st = 0; st < steps && !gone; st++) {
+      m.x += m.vx*dt/steps; m.y += m.vy*dt/steps; m.z += m.vz*dt/steps;
+      const [ox, oy, oz] = objV(m.x, m.y, m.z);
+      const mx = Math.max(Math.abs(ox), Math.abs(oy), Math.abs(oz));
+      if (mx < CORE) {
+        const p = proj(m.x, m.y, m.z);
+        impact(p.x, p.y, CORAL, 16); sprinkle(p.x, p.y, CORAL, 8, 110);
+        coreHP = Math.max(0, coreHP - 0.05); coreFlash = 1.0; coreFlashCol = CORAL;
+        if (coreHP <= 0) { coreHP = 0.35; breachT = 2.5; }
+        gone = true;
+      } else {
+        const c = cellAtObj(ox, oy, oz);
+        if (c) {
+          const p = proj(m.x, m.y, m.z), px = p.x, py = p.y, R = rnd(0.24, 0.34);
+          for (const o of cells) if (o.alive && Math.hypot(o.c[0] - ox, o.c[1] - oy, o.c[2] - oz) < R) destroyCell(o, px, py);
+          impact(px, py, '235,255,255', rnd(15, 22));
+          gone = true;
+        }
+      }
+    }
+    if (gone) { missiles.splice(i, 1); continue; }
+    // trail history and burning-fuel fizz
+    m.tr.push(m.x, m.y, m.z); if (m.tr.length > 90) m.tr.splice(0, 3);
+    m.fz += dt*55;
+    if (m.fz >= 1) {
+      const p = proj(m.x, m.y, m.z), hx = p.x, hy = p.y;
+      const b = proj(m.x - m.vx*0.03, m.y - m.vy*0.03, m.z - m.vz*0.03), bx = hx - b.x, by = hy - b.y;
+      while (m.fz >= 1) {
+        m.fz -= 1;
+        const t = rnd(1.0), L = rnd(0.12, 0.38);
+        fizz.push({x: hx - bx*t*1.5 + rnd(-1.5, 1.5), y: hy - by*t*1.5 + rnd(-1.5, 1.5), vx: -bx*rnd(2, 6) + rnd(-25, 25), vy: -by*rnd(2, 6) + rnd(-25, 25),
+          s: rnd(0.6, 1.6), life: L, max: L, hot: Math.random() < 0.35});
+      }
+    }
+  }
+
+  // EMP
+  empCharge += dt / empDur;
+  windup = failed ? 0 : clamp((empCharge*empDur - (empDur - WINDUP)) / WINDUP, 0, 1);
+  if (windup > 0) {
+    antT -= dt;
+    if (antT <= 0) { antT = 0.65 - 0.47*windup; pulses.push({r: 0, col: [70, 160, 255], id: 0}); }
+  } else antT = 0;
+  surgeGlow = Math.max(0, surgeGlow - dt*0.7);
+  if (false) { // motes streaming into the core, faster and denser as it builds
+    moteAcc += dt * (30 + 150*windup);
+    while (moteAcc >= 1) {
+      moteAcc -= 1;
+      const a = rnd(TAU), r = rnd(0.8, 1.25) * Math.min(W, H) * 0.42, L = rnd(0.35, 0.6);
+      motes.push({a, r0: r, t: 0, L, spin: rnd(-0.6, 0.6)});
+    }
+  }
+  for (let i = motes.length - 1; i >= 0; i--) { motes[i].t += dt; if (motes[i].t >= motes[i].L) motes.splice(i, 1); }
+  if (empCharge >= 1 && !failed) surge();
+  if (emp) {
+    // bursts out fast, then gradually slows (cubic ease-out over EMP_T seconds)
+    emp.t = (emp.t || 0) + dt;
+    const k = Math.min(1, emp.t / 1.6);
+    emp.r = emp.max * (1.0 - (1.0 - k)**3) + (k >= 1 ? 1 : 0);
+    for (let i = ships.length - 1; i >= 0; i--) if (Math.hypot(ships[i].sx - CX, ships[i].sy - CY) <= emp.r) killShip(i, empCol);
+    for (let i = missiles.length - 1; i >= 0; i--) {
+      const m = missiles[i], p = proj(m.x, m.y, m.z);
+      if (Math.hypot(p.x - CX, p.y - CY) <= emp.r) { sprinkle(p.x, p.y, empCol, 3, 60); missiles.splice(i, 1); }
+    }
+    if (emp.r > emp.max) emp = null;
+  }
+  empTint = Math.max(0, empTint - dt*0.7);
+
+  coreHP = Math.min(1, coreHP + dt*0.008);
+  coreFlash = Math.max(0, coreFlash - dt*2.5);
+  breachT = Math.max(0, breachT - dt);
+
+  for (let i = dots.length - 1; i >= 0; i--) {
+    const s = dots[i]; s.life -= dt;
+    if (s.life <= 0) { dots.splice(i, 1); continue; }
+    const f = Math.exp(-dt*1.8); s.vx *= f; s.vy *= f; s.x += s.vx*dt; s.y += s.vy*dt;
+  }
+  for (let i = pieces.length - 1; i >= 0; i--) {
+    const s = pieces[i]; s.life -= dt;
+    if (s.life <= 0) { pieces.splice(i, 1); continue; }
+    const f = Math.exp(-dt*1.4); s.vx *= f; s.vy *= f; s.x += s.vx*dt; s.y += s.vy*dt; s.a += s.va*dt;
+  }
+  for (let i = fizz.length - 1; i >= 0; i--) {
+    const f = fizz[i]; f.life -= dt;
+    if (f.life <= 0) { fizz.splice(i, 1); continue; }
+    f.x += f.vx*dt; f.y += f.vy*dt; f.vx *= 0.92; f.vy *= 0.92;
+  }
+  for (let i = denies.length - 1; i >= 0; i--) { denies[i].life -= dt; if (denies[i].life <= 0) denies.splice(i, 1); }
+  denyT = Math.max(0, denyT - dt);
+  for (let i = impacts.length - 1; i >= 0; i--) { impacts[i].life -= dt; if (impacts[i].life <= 0) impacts.splice(i, 1); }
+  for (let i = beams.length - 1; i >= 0; i--) { beams[i].life -= dt; if (beams[i].life <= 0) beams.splice(i, 1); }
+}
+
+// ---------- draw ----------
+let GLOW_W = 3.0, GLOW = null, SRGB = [255, 52, 72];
+const FILL = '#010304', EDGE = new Array(8), GLY = new Array(8);
+const FN = FACES.map(() => [0,0,0]), FU = FACES.map(() => [0,0,0]), FW = FACES.map(() => [0,0,0]);
+const RC = Array.from({length: 8}, () => [0,0,0]), VIS = new Uint8Array(6);
+
+// simple starfield; drifts with the spin for a little parallax
+const STARS = Array.from({length: 220}, () => ({u: Math.random(), v: Math.random(), d: rnd(0.2, 1.0), b: rnd(0.15, 0.7), tw: rnd(TAU), ts: rnd(0.5, 2.5)}));
+let starX = 0, starY = 0;
+function drawBackground() {
+  starX += wy * 0.016 * 30; starY += wx * 0.016 * 30;
+  for (const st of STARS) {
+    const x = ((st.u*W + starX*st.d) % W + W) % W, y = ((st.v*H + starY*st.d) % H + H) % H;
+    const a = st.b * (0.7 + 0.3*Math.sin(now*st.ts + st.tw)), z = st.d > 0.8 ? 1.4 : 1.0;
+    ctx.fillStyle = 'rgba(210,235,255,' + a.toFixed(2) + ')';
+    ctx.fillRect(x, y, z, z);
+  }
+}
+
+function drawCell(c) {
+  const g = Math.min(1, c.grow), e = 1.0 - (1.0 - g)**3, h = HC*e;
+  const [ccx, ccy, ccz] = [c.cx, c.cy, c.z];
+  for (let k = 0; k < 8; k++) {
+    const p = proj(ccx + RC[k][0]*h, ccy + RC[k][1]*h, ccz + RC[k][2]*h);
+    c.pc[k*2] = p.x; c.pc[k*2+1] = p.y;
+  }
+  ctx.beginPath();
+  for (let f = 0; f < 6; f++) {
+    const n = FN[f], fx = ccx + n[0]*h, fy = ccy + n[1]*h, fz = ccz + n[2]*h;
+    VIS[f] = (n[0]*-fx + n[1]*-fy + n[2]*(D - fz)) > 0 ? 1 : 0;
+    if (!VIS[f]) continue;
+    const v = FACES[f].v;
+    ctx.moveTo(c.pc[v[0]*2], c.pc[v[0]*2+1]);
+    for (let q = 1; q < 4; q++) ctx.lineTo(c.pc[v[q]*2], c.pc[v[q]*2+1]);
+    ctx.closePath();
+  }
+  const lv = clamp((ccz + 2.2)/4.4, 0, 0.999)*8|0;
+  ctx.fillStyle = FILL; ctx.fill();
+  ctx.lineWidth = 0.9;
+  let tint = 0, tc = null;
+  for (const p of pulses) { const q = (c.d - p.r)/0.24, v = Math.exp(-q*q); if (v > tint) { tint = v; tc = p.col; } }
+  if (tint > 0.06) {
+    const b = 1.0 - tint;
+    ctx.strokeStyle = 'rgba(' + Math.round(tc[0] + (255 - tc[0])*b*0.3) + ',' + Math.round(tc[1] + (255 - tc[1])*b*0.3) + ',' + Math.round(tc[2] + (255 - tc[2])*b*0.3) + ',' + (0.5 + 0.5*tint).toFixed(2) + ')';
+    ctx.lineWidth = 0.9 + tint*0.8;
+  } else if (c.flash > 0.02) { // newly grown: fade smoothly from blue back to the shield red
+    const t = c.flash*c.flash*(3.0 - 2.0*c.flash), a0 = 0.28 + 0.67*lv/7;
+    ctx.strokeStyle = 'rgba(' + SRGB.map((v, i) => Math.round(v + ([70, 160, 255][i] - v)*t)).join(',') + ',' + (a0 + (0.95 - a0)*t).toFixed(3) + ')';
+  } else ctx.strokeStyle = EDGE[lv];
+  ctx.stroke();
+  const edgeStyle = ctx.strokeStyle;
+  if (GLOW) { ctx.lineWidth = GLOW_W; ctx.strokeStyle = GLOW; ctx.stroke(); ctx.lineWidth = 0.9; ctx.strokeStyle = edgeStyle; ctx.stroke(); }
+  if (e < 0.6) return;
+  let any = false;
+  for (const gl of c.gl) {
+    if (!VIS[gl.f]) continue;
+    if (!any) { ctx.beginPath(); any = true; }
+    const n = FN[gl.f], u = FU[gl.f], w = FW[gl.f], q = h*0.6;
+    const fx = ccx + n[0]*h, fy = ccy + n[1]*h, fz = ccz + n[2]*h;
+    for (const s of GLYPHS[gl.g]) for (let i = 0; i < s.length; i++) {
+      const a = s[i][0]*q, b = s[i][1]*q;
+      const p = proj(fx + u[0]*a + w[0]*b, fy + u[1]*a + w[1]*b, fz + u[2]*a + w[2]*b);
+      if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y);
+    }
+  }
+  if (any) { ctx.lineWidth = 0.7; ctx.strokeStyle = edgeStyle; ctx.stroke(); } // glyphs share the cube's edge colour
+}
+
+// core surface: a printed-circuit pattern per face, in face uv (-1..1)
+function makeCircuit() {
+  const lines = [], pads = [], traces = [];
+  const sq = r => [[-r,-r],[r,-r],[r,r],[-r,r],[-r,-r]];
+  lines.push(sq(0.86), sq(0.3));
+  for (let t = -0.7; t <= 0.71; t += 0.35) lines.push([[t,-0.86],[t,-0.8]], [[t,0.86],[t,0.8]], [[-0.86,t],[-0.8,t]], [[0.86,t],[0.8,t]]);
+  const pins = [];
+  for (const o of [-0.18, 0.0, 0.18]) {
+    pins.push([[o,0.3],[o,0.4],[0,1]], [[o,-0.3],[o,-0.4],[0,-1]], [[0.3,o],[0.4,o],[1,0]], [[-0.3,o],[-0.4,o],[-1,0]]);
+  }
+  for (const p of pins) lines.push([p[0], p[1]]);
+  pins.sort(() => Math.random() - 0.5);
+  for (const p of pins.slice(0, 7)) {
+    const [, e, d] = p, a = rnd(0.12, 0.3), side = Math.random() < 0.5 ? -1 : 1;
+    const p1 = [e[0] + d[0]*a, e[1] + d[1]*a];
+    const b = rnd(0.1, 0.3) * side;
+    const p2 = [p1[0] + (d[0] ? 0 : b), p1[1] + (d[1] ? 0 : b)];
+    const L = rnd(0.62, 0.72);
+    const p3 = [d[0] ? d[0]*L : p2[0], d[1] ? d[1]*L : p2[1]];
+    const tr = [e, p1, p2, p3]; lines.push(tr); traces.push(tr); pads.push(p3);
+  }
+  for (const pd of pads) lines.push(circ(pd[0], pd[1], 0.045, 0, TAU, 6));
+  lines.push(circ(0, 0, 0.12, 0, TAU, 10));
+  return {lines, traces, off: traces.map(() => rnd(1.0))};
+}
+const CIRCUITS = FACES.map(makeCircuit);
+function alongPath(pts, t) {
+  let L = 0; const seg = [];
+  for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i-1][0], pts[i][1] - pts[i-1][1]); seg.push(l); L += l; }
+  let d = t*L;
+  for (let i = 0; i < seg.length; i++) {
+    if (d <= seg[i]) { const f = d/seg[i]; return [pts[i][0] + (pts[i+1][0] - pts[i][0])*f, pts[i][1] + (pts[i+1][1] - pts[i][1])*f]; }
+    d -= seg[i];
+  }
+  return pts[pts.length - 1];
+}
+function drawCore() {
+  const w2 = windup*windup;
+  const h = CORE*0.92*(1.0 + 0.035*Math.sin(now*3.0));
+  let col = '255,255,255';
+  if (false) {
+    const e = nextEmpCol.split(',').map(Number), f = Math.min(1, windup*1.4) * (Math.sin(now*(10 + 40*windup)) > -0.6 ? 1.0 : 0.5);
+    col = [220, 255, 255].map((v, i) => Math.round(v + (e[i] - v)*f)).join(',');
+  }
+  if (coreFlash > 0) col = coreFlashCol;
+  else if (coreHP < 0.3 && Math.sin(now*22) > 0.3) col = CORAL;
+  const pc = [];
+  for (let k = 0; k < 8; k++) { const p = proj(RC[k][0]*h, RC[k][1]*h, RC[k][2]*h); pc.push(p.x, p.y); }
+  const vis = [];
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.beginPath();
+  for (let f = 0; f < 6; f++) {
+    const n = FN[f];
+    if (n[0]*-n[0]*h + n[1]*-n[1]*h + n[2]*(D - n[2]*h) <= 0) continue;
+    vis.push(f);
+    const v = FACES[f].v;
+    ctx.moveTo(pc[v[0]*2], pc[v[0]*2+1]);
+    for (let q = 1; q < 4; q++) ctx.lineTo(pc[v[q]*2], pc[v[q]*2+1]);
+    ctx.closePath();
+  }
+  ctx.fillStyle = FILL; ctx.fill();
+  ctx.globalCompositeOperation = 'lighter';
+  const edges = new Path2D();
+  for (const f of vis) { const v = FACES[f].v; edges.moveTo(pc[v[0]*2], pc[v[0]*2+1]); for (let q = 1; q < 4; q++) edges.lineTo(pc[v[q]*2], pc[v[q]*2+1]); edges.closePath(); }
+  ctx.lineWidth = 1.0; ctx.strokeStyle = 'rgba(' + col + ',0.95)'; ctx.stroke(edges);
+  // a smaller inset square on each visible face
+  ctx.beginPath();
+  for (const f of vis) {
+    const n = FN[f], U = FU[f], V = FW[f], q = h*0.275;
+    SQ.forEach((c, i) => {
+      const p = proj(n[0]*h + (U[0]*c[0] + V[0]*c[1])*q, n[1]*h + (U[1]*c[0] + V[1]*c[1])*q, n[2]*h + (U[2]*c[0] + V[2]*c[1])*q);
+      if (i) ctx.lineTo(p.x, p.y); else ctx.moveTo(p.x, p.y);
+    });
+    ctx.closePath();
+  }
+  ctx.lineWidth = 1.0; ctx.strokeStyle = 'rgb(128,128,128)'; ctx.stroke();
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function drawShieldsAndCore() {
+  // per-frame rotated basis
+  for (let k = 0; k < 8; k++) { const r = camV(CO[k]); RC[k][0] = r[0]; RC[k][1] = r[1]; RC[k][2] = r[2]; }
+  for (let f = 0; f < 6; f++) {
+    const n = camV(FACES[f].n), u = camV(FACES[f].u), w = camV(FACES[f].w);
+    for (let a = 0; a < 3; a++) { FN[f][a] = n[a]; FU[f][a] = u[a]; FW[f][a] = w[a]; }
+  }
+  let rgb = CYAN;
+  if (empTint > 0) { const e = empCol.split(',').map(Number), t = Math.min(1, empTint*1.3); rgb = CYAN.map((v, i) => Math.round(v + (e[i] - v)*t)); }
+  const sg = surgeGlow*surgeGlow*(3.0 - 2.0*surgeGlow); // smooth fade back to red
+  if (sg > 0) rgb = rgb.map((v, i) => Math.round(v + ([110, 195, 255][i] - v)*sg));
+  for (let l = 0; l < 8; l++) {
+    EDGE[l] = 'rgba(' + rgb.join(',') + ',' + Math.min(1, (0.28 + 0.67*l/7)*(1.0 + 0.6*sg)).toFixed(3) + ')';
+    GLY[l] = 'rgba(200,250,255,' + Math.min(1, (0.18 + 0.6*l/7)*(1.0 + 0.5*sg)).toFixed(3) + ')';
+  }
+  SRGB = rgb;
+  const kb = clamp((surgeGlow - 0.55)/0.45, 0, 1); // only the first, fully-blue stretch of the surge
+  GLOW = kb > 0.01 ? 'rgba(140,210,255,' + (0.4*kb*kb).toFixed(3) + ')' : null; GLOW_W = 2.0 + 4.0*kb;
+  const list = [];
+  for (const c of cells) {
+    if (!c.alive || c.grow <= 0) continue;
+    const p = camV(c.c); c.cx = p[0]; c.cy = p[1]; c.z = p[2];
+    list.push(c);
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  for (const s of ships) list.push({ship: s, z: s.P[2]});
+  for (const m of missiles) list.push({mis: m, z: m.z});
+  list.sort((a, b) => a.z - b.z);
+  let coreDone = false;
+  for (const c of list) {
+    if (!coreDone && c.z > 0) { drawCore(); coreDone = true; }
+    if (c.ship) drawShip(c.ship); else if (c.mis) drawMissile(c.mis); else drawCell(c);
+  }
+  if (!coreDone) drawCore();
+}
+
+const SQ = [[1,1],[-1,1],[-1,-1],[1,-1]];
+const SFACES = [[0,1,2,3],[4,5,6,7],[0,1,5,4],[1,2,6,5],[2,3,7,6],[3,0,4,7]];
+function drawShip(s) {
+  const bs = 0.3 + 0.7*s.born;
+  const fl = Math.hypot(s.P[0], s.P[1], s.P[2]) || 1, f = [-s.P[0]/fl, -s.P[1]/fl, -s.P[2]/fl];
+  // pinball plunger: drawn slowly out in the run-up to a shot, snapped hard back in as it fires
+  const PULL = 0.9, kt = s.kickT;
+  const pull = s.state === 'seek' && s.tgt ? clamp(1.0 - (s.th || 9)/0.6, 0, 1)**1.6 : 0.0; // draws back over the final approach
+  const kick = Math.max(pull, kt < 0.035 ? 1.0 - kt/0.035 : 0.0);
+  const recoil = Math.exp(-kt*9.0);
+  const P = [s.P[0] - f[0]*0.035*recoil, s.P[1] - f[1]*0.035*recoil, s.P[2] - f[2]*0.035*recoil];
+  let u = s.tan.slice();
+  const d = u[0]*f[0] + u[1]*f[1] + u[2]*f[2]; u = [u[0] - f[0]*d, u[1] - f[1]*d, u[2] - f[2]*d];
+  const ul = Math.hypot(...u) || 1; u = u.map(x => x/ul);
+  const v = [f[1]*u[2] - f[2]*u[1], f[2]*u[0] - f[0]*u[2], f[0]*u[1] - f[1]*u[0]];
+  const L1 = 0.1*bs, L2 = 0.17*bs, sb = 0.09*bs, sc = 0.028*bs;
+  const V = [];
+  for (const [back, half] of [[-L1, sb], [L2, sc]]) for (const q of SQ)
+    V.push([P[0] + f[0]*back + (u[0]*q[0] + v[0]*q[1])*half, P[1] + f[1]*back + (u[1]*q[0] + v[1]*q[1])*half, P[2] + f[2]*back + (u[2]*q[0] + v[2]*q[1])*half]);
+  const S = V.map(w => { const p = proj(w[0], w[1], w[2]); return [p.x, p.y]; });
+  ctx.beginPath();
+  for (const F of SFACES) {
+    const c = [0, 1, 2].map(k => (V[F[0]][k] + V[F[1]][k] + V[F[2]][k] + V[F[3]][k]) / 4);
+    const e1 = [0, 1, 2].map(k => V[F[1]][k] - V[F[0]][k]), e2 = [0, 1, 2].map(k => V[F[3]][k] - V[F[0]][k]);
+    let n = [e1[1]*e2[2] - e1[2]*e2[1], e1[2]*e2[0] - e1[0]*e2[2], e1[0]*e2[1] - e1[1]*e2[0]];
+    if (n[0]*(c[0] - P[0]) + n[1]*(c[1] - P[1]) + n[2]*(c[2] - P[2]) < 0) n = n.map(x => -x);
+    if (n[0]*-c[0] + n[1]*-c[1] + n[2]*(D - c[2]) <= 0) continue;
+    ctx.moveTo(S[F[0]][0], S[F[0]][1]); for (let k = 1; k < 4; k++) ctx.lineTo(S[F[k]][0], S[F[k]][1]); ctx.closePath();
+  }
+  ctx.fillStyle = FILL; ctx.fill();
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(' + ORANGE + ',0.95)'; ctx.stroke();
+  // plunger: a single line out of the centre of the base, along the base's normal
+  const len = (0.0125 + 0.08*kick)*bs, r0 = L1, r1 = L1 + len, kb = 0.03*bs;
+  const pt = (back, side) => proj(P[0] - f[0]*back + u[0]*side, P[1] - f[1]*back + u[1]*side, P[2] - f[2]*back + u[2]*side);
+  let q = pt(r0, 0); const x0 = q.x, y0 = q.y; q = pt(r1, 0); const x1 = q.x, y1 = q.y;
+  ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1);
+  ctx.lineWidth = 1.2; ctx.strokeStyle = 'rgba(' + ORANGE + ',' + (0.7 + 0.3*kick).toFixed(2) + ')'; ctx.stroke();
+  // screen-space values used by the HUD bar and the break-up pieces
+  const p = proj(P[0], P[1], P[2]);
+  s.sx = p.x; s.sy = p.y; s.s = p.s;
+  const sz = s.sz = 7 * p.s / SC * bs;
+  let ux = CX - s.sx, uy = CY - s.sy; const l = Math.hypot(ux, uy) || 1; s.ux = ux/l; s.uy = uy/l;
+  const lf = clamp(s.life / s.max, 0, 1), bw = 22, bx = s.sx - bw/2, by = s.sy + sz + 10;
+  if (lf < 0.2 && Math.sin(now*24) < 0) return;
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.strokeRect(bx - 0.5, by - 0.5, bw + 1, 3);
+  ctx.fillStyle = 'rgba(255,48,64,0.95)';
+  ctx.fillRect(bx, by, bw*lf, 2);
+}
+
+function drawMissile(m) {
+  // fading, tapering trail
+  const tr = m.tr, n = tr.length/3;
+  if (n >= 2) {
+    let p = proj(tr[0], tr[1], tr[2]), px = p.x, py = p.y;
+    for (let i = 1; i < n; i++) {
+      p = proj(tr[i*3], tr[i*3+1], tr[i*3+2]);
+      const t = i/(n - 1);
+      ctx.strokeStyle = 'rgba(255,' + Math.round(70 + 110*t) + ',' + Math.round(90 + 30*t) + ',' + (0.7*t*t).toFixed(3) + ')';
+      ctx.lineWidth = 0.4 + 1.4*t;
+      ctx.beginPath(); ctx.moveTo(px, py); ctx.lineTo(p.x, p.y); ctx.stroke();
+      px = p.x; py = p.y;
+    }
+  }
+  const a = proj(m.x, m.y, m.z), ax = a.x, ay = a.y;
+  const b = proj(m.x - m.vx*0.05, m.y - m.vy*0.05, m.z - m.vz*0.05);
+  ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(' + CORAL + ',0.9)';
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(b.x, b.y); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,245,235,1)'; ctx.fillRect(ax - 1.1, ay - 1.1, 2.2, 2.2);
+}
+function drawFizz() {
+  // flickering sparks of burning fuel
+  for (const f of fizz) {
+    const t = f.life/f.max, a = t*(0.55 + 0.45*Math.random()), z = f.s*(0.4 + 0.6*t);
+    ctx.fillStyle = f.hot ? 'rgba(255,245,210,' + a.toFixed(2) + ')' : 'rgba(255,' + Math.round(120 + 90*t) + ',70,' + a.toFixed(2) + ')';
+    ctx.fillRect(f.x - z/2, f.y - z/2, z, z);
+  }
+}
+
+function drawFX() {
+  if (surgeGlow > 0.55) { // kaboom: a hot flash bursting out of the core at the moment of the surge
+    const k = (surgeGlow - 0.55)/0.45, R = Math.min(W, H)*(0.15 + 0.5*(1.0 - k)), cs = Math.min(W, H)*0.04;
+    const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, R);
+    g.addColorStop(0, 'rgba(235,248,255,' + (0.9*k*k).toFixed(3) + ')');
+    g.addColorStop(0.25, 'rgba(110,185,255,' + (0.45*k*k).toFixed(3) + ')');
+    g.addColorStop(1, 'rgba(70,160,255,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX, CY, R, 0, TAU); ctx.fill();
+  }
+  for (const b of beams) {
+    const a = b.life / 0.3;
+    ctx.strokeStyle = 'rgba(' + ICE + ',' + (a*0.9).toFixed(3) + ')'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(CX, CY);
+    for (let i = 1; i <= 7; i++) {
+      const t = i/7, j = i < 7 ? rnd(-4, 4) : 0;
+      ctx.lineTo(CX + (b.s.sx - CX)*t + j, CY + (b.s.sy - CY)*t + j);
+    }
+    ctx.stroke();
+  }
+  // main impact: expands outward while fading
+  for (const m of impacts) {
+    const k = 1.0 - m.life/m.max, r = m.R*(0.1 + 0.9*(1.0 - (1.0 - k)**2)), a = (1.0 - k)**1.3;
+    ctx.fillStyle = 'rgba(' + m.col + ',' + (0.12*a).toFixed(3) + ')'; ctx.strokeStyle = 'rgba(' + m.col + ',' + (0.95*a).toFixed(3) + ')'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(m.x, m.y, r, 0, TAU); ctx.fill(); ctx.stroke();
+  }
+  // shrapnel: tiny circles shrinking as they fly
+  ctx.lineWidth = 0.9;
+  const groups = new Map();
+  for (const d of dots) { let g = groups.get(d.col); if (!g) groups.set(d.col, g = []); g.push(d); }
+  for (const [col, g] of groups) {
+    ctx.strokeStyle = 'rgba(' + col + ',0.95)'; ctx.beginPath();
+    for (const d of g) { const r = d.r * d.life/d.max; if (r < 0.15) continue; ctx.moveTo(d.x + r, d.y); ctx.arc(d.x, d.y, r, 0, TAU); }
+    ctx.stroke();
+  }
+  // breaker pieces: solid shards
+  for (const s of pieces) {
+    const t = s.life/s.max, sc = 0.5 + 0.5*t, c = Math.cos(s.a)*sc, n = Math.sin(s.a)*sc;
+    ctx.fillStyle = 'rgba(' + s.col + ',' + (0.95*Math.min(1, t*1.6)).toFixed(3) + ')';
+    ctx.beginPath();
+    s.pts.forEach((p, i) => { const x = s.x + p[0]*c - p[1]*n, y = s.y + p[0]*n + p[1]*c; if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); });
+    ctx.closePath(); ctx.fill();
+  }
+  // refused deployment: crossed reticle and label at the tap point
+  for (const d of denies) {
+    const k = 1.0 - d.life/0.9, a = Math.min(1, d.life*2.5) * (Math.sin(k*40) > -0.3 ? 1.0 : 0.35), r = 12 + 6*k;
+    ctx.strokeStyle = 'rgba(255,60,80,' + a.toFixed(2) + ')'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.arc(d.x, d.y, r, 0, TAU);
+    ctx.moveTo(d.x - r*0.55, d.y - r*0.55); ctx.lineTo(d.x + r*0.55, d.y + r*0.55);
+    ctx.moveTo(d.x + r*0.55, d.y - r*0.55); ctx.lineTo(d.x - r*0.55, d.y + r*0.55);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,90,105,' + a.toFixed(2) + ')';
+    ctx.font = '500 10px ui-monospace, Menlo, monospace'; ctx.textAlign = 'center';
+    ctx.fillText('MAX 20 // DEPLOY REFUSED', clamp(d.x, 90, W - 90), d.y - r - 8);
+  }
+  if (false) {
+    const w2 = windup*windup;
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(' + nextEmpCol + ',0.85)'; ctx.beginPath();
+    for (const m of motes) {
+      const k = m.t/m.L, e = k*k*k, r = m.r0*(1.0 - e) + 4, a = m.a + m.spin*k, tail = 4 + 22*e;
+      const c = Math.cos(a), s2 = Math.sin(a);
+      ctx.moveTo(CX + c*r, CY + s2*r); ctx.lineTo(CX + c*(r + tail), CY + s2*(r + tail));
+    }
+    ctx.stroke();
+    // contracting rings converge on the core
+    const R0 = Math.min(W, H)*0.48, coreR = CORE*SC*1.4;
+    for (let q = 0; q < 3; q++) {
+      const ph = (windup*2.2 + q/3) % 1.0, r = coreR + (R0 - coreR)*(1.0 - ph)**2, a = ph*windup*0.8;
+      ctx.strokeStyle = 'rgba(' + nextEmpCol + ',' + a.toFixed(3) + ')'; ctx.lineWidth = 1 + windup;
+      ctx.beginPath(); ctx.arc(CX, CY, r, 0, TAU); ctx.stroke();
+    }
+    const g = ctx.createRadialGradient(CX, CY, 0, CX, CY, coreR*3);
+    g.addColorStop(0, 'rgba(' + nextEmpCol + ',' + (0.35*w2).toFixed(3) + ')'); g.addColorStop(1, 'rgba(' + nextEmpCol + ',0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(CX, CY, coreR*3, 0, TAU); ctx.fill();
+  }
+  if (emp) {
+    const t = emp.r / emp.max, a = 1.0 - t;
+    const grd = ctx.createRadialGradient(CX, CY, Math.max(0, emp.r*0.6), CX, CY, emp.r);
+    grd.addColorStop(0, 'rgba(' + empCol + ',0)'); grd.addColorStop(1, 'rgba(' + empCol + ',' + (0.18*a).toFixed(3) + ')');
+    ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(CX, CY, emp.r, 0, TAU); ctx.fill();
+    ctx.strokeStyle = 'rgba(' + empCol + ',' + (0.95*a).toFixed(3) + ')'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(CX, CY, emp.r, 0, TAU); ctx.stroke();
+    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(' + empCol + ',' + (0.5*a).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(CX, CY, emp.r*0.86, 0, TAU); ctx.stroke();
+    ctx.setLineDash([3, 7]);
+    ctx.beginPath(); ctx.arc(CX, CY, emp.r*0.72, 0, TAU); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+}
+
+// ---------- HUD ----------
+const $ = id => document.getElementById(id);
+const hud = {st: $('st'), hp: $('hp'), hpBar: $('hpBar'), sh: $('sh'), shBar: $('shBar'), og: $('og'), bk: $('bk'), kd: $('kd'), ep: $('ep'), epBar: $('epBar')};
+function updateHUD() {
+  let alive = 0, outer = 0;
+  for (const c of cells) { if (!c.alive) continue; if (c.ring === 2) alive++; else outer++; }
+  hud.hp.textContent = Math.round(coreHP*100); hud.hpBar.style.width = (coreHP*100) + '%';
+  hud.sh.textContent = alive; hud.shBar.style.width = (alive/TOTAL*100) + '%';
+  hud.og.textContent = String(outer).padStart(3, '0');
+  $('sl').textContent = String(Math.round(sealed*TOTAL)).padStart(2, '0'); $('slBar').style.width = Math.min(100, sealed/SEAL_FAIL*100) + '%';
+  $('sl').className = sealed >= SEAL_FAIL*0.7 ? 'warn' : '';
+  hud.bk.textContent = String(ships.length).padStart(2, '0');
+  hud.bk.style.color = denyT > 0 ? '#ff3c50' : ships.length >= MAX_SHIPS ? '#ffb0b8' : '';
+  hud.kd.textContent = String(kills).padStart(4, '0');
+  const ep = emp ? 100 : Math.floor(empCharge*100);
+  hud.ep.textContent = ep; hud.epBar.style.width = ep + '%';
+  if (windup > 0) hud.epBar.style.background = 'rgb(' + nextEmpCol + ')';
+  let st = 'NOMINAL', warn = false;
+  if (failed) st = 'FORTIFIED';
+  else if (emp) st = 'EMP DISCHARGE';
+  else if (windup > 0) { st = 'GROWTH SURGE'; warn = Math.sin(now*20) > 0; }
+  else if (breachT > 0) { st = 'CORE BREACH'; warn = true; }
+  else if (ships.length) { st = 'UNDER ATTACK'; warn = true; }
+  else if (alive < TOTAL) st = 'REBUILDING';
+  hud.st.textContent = st; hud.st.className = warn ? 'warn' : '';
+}
+
+// ---------- loop ----------
+let last = performance.now(), hudT = 0;
+function frame(t) {
+  const dt = Math.min(0.05, (t - last)/1000); last = t; now += dt;
+  update(dt);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#020609'; ctx.fillRect(0, 0, W, H);
+  // surge camera: decaying shake plus a quick slight zoom-in that eases back out
+  if (camT >= 0) {
+    camT += dt;
+    const A = 9.0*Math.exp(-camT*5.0), ox = A*(Math.sin(now*71.0) + 0.5*Math.sin(now*37.0))/1.5, oy = A*(Math.sin(now*63.0 + 1.3) + 0.5*Math.sin(now*29.0))/1.5;
+    const env = camT < 0.07 ? camT/0.07 : Math.exp(-(camT - 0.07)*7.0), z = 1.0 + 0.2*env;
+    // shake is a plain translate; zoom goes through the projection scale so line widths stay put
+    ctx.setTransform(DPR, 0, 0, DPR, DPR*ox, DPR*oy);
+    camZ = z;
+    if (camT > 3.5) camT = -1;
+  } else camZ = 1.0;
+  const SC0 = SC; SC = SC0*camZ;
+  ctx.globalCompositeOperation = 'lighter';
+  drawBackground();
+  drawShieldsAndCore();
+  ctx.globalCompositeOperation = 'lighter';
+  drawFizz(); drawFX();
+  SC = SC0;
+  if (fxOn) postFX(camT >= 0 ? Math.exp(-camT*4.0) : 0.0);
+  hudT -= dt; if (hudT <= 0) { hudT = 0.15; updateHUD(); }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
