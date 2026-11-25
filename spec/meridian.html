@@ -22,6 +22,10 @@ body{position:fixed;inset:0;-webkit-user-select:none;user-select:none;-webkit-to
 body{font:300 10px/1.6 var(--f);letter-spacing:.08em;font-variant-numeric:tabular-nums}
 .sub,.meter>span:first-child,dt,.ph,.lbl,.foot,.bl,.br,#fps,.checks em{text-transform:uppercase;letter-spacing:.16em;font-size:9px}
 #c{position:fixed;inset:0;width:100%;height:100%;cursor:crosshair;display:block;touch-action:none}
+#vig{position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.5) 100%)}
+#grain{position:fixed;inset:-64px;pointer-events:none;opacity:.045;animation:gr .5s steps(4) infinite}
+@keyframes gr{0%{transform:translate(0,0)}25%{transform:translate(-37px,21px)}50%{transform:translate(19px,-44px)}75%{transform:translate(-12px,-9px)}}
+@media(prefers-reduced-motion:reduce){#grain{animation:none}}
 #t{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 #ov{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 #lead{fill:none;stroke:var(--acc);stroke-width:.75;stroke-dasharray:3 3}
@@ -114,6 +118,7 @@ dt{color:var(--dim)}dd{margin:0;white-space:nowrap;overflow:hidden;text-overflow
 </head>
 <body>
 <canvas id="c" aria-label="Field of moving circles; each circle is a person. Click one to open its record."></canvas>
+<div id="vig"></div><div id="grain"></div>
 <canvas id="t"></canvas>
 <svg id="ov"><path id="lead" d=""/><circle id="leadEnd" r="0"/></svg>
 
@@ -173,31 +178,12 @@ let W=0,H=0,DPR=1,RS=1,QUAL=1,qT=0,qGood=0,bg=document.createElement('canvas');
 const FONTS=['Martian Mono','JetBrains Mono','Azeret Mono','Space Mono','Share Tech Mono'];let FI=0,FONT='"Martian Mono",monospace';
 function setFont(i){FI=(i+FONTS.length)%FONTS.length;FONT=`"${FONTS[FI]}",monospace`;document.documentElement.style.setProperty('--f',FONT);$('fontn').textContent=FONTS[FI];$('fontb').querySelector('b').textContent=`${FI+1}/${FONTS.length}`;try{localStorage.setItem('meridian-font',FI)}catch(e){}if(!RM){gUntil=t+.12}}
 const T=$('t'),tx2=T.getContext('2d');let LB=[],RL=[];const lbl=(str,x,y,c)=>LB.push(str,x,y,c);
-let gl=null,uRes,uT,uG;
-{try{gl=G.getContext('webgl',{antialias:false,alpha:false})}catch(e){}
- if(gl){const sh=(type,src)=>{const o=gl.createShader(type);gl.shaderSource(o,src);gl.compileShader(o);return gl.getShaderParameter(o,gl.COMPILE_STATUS)?o:null};
-  const vs=sh(gl.VERTEX_SHADER,'attribute vec2 a;varying vec2 v;void main(){v=a*.5+.5;gl_Position=vec4(a,0.,1.);}');
-  const fs=sh(gl.FRAGMENT_SHADER,`precision mediump float;uniform sampler2D u;uniform vec2 res;uniform float t,g;varying vec2 v;
-float h(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
-void main(){vec2 dir=v-.5;vec2 d=dir;d.x*=res.x/res.y;float r2=dot(d,d);
- float ca=(.0016+g*.012)*(.35+r2*3.2);
- vec3 c=vec3(texture2D(u,v+dir*ca).r,texture2D(u,v).g,texture2D(u,v-dir*ca).b);
- c*=1.-r2*.5;c+=(h(v*res+fract(t*7.)*91.)-.5)*.03;gl_FragColor=vec4(c,1.);}`);
-  const pr=gl.createProgram();if(vs&&fs){gl.attachShader(pr,vs);gl.attachShader(pr,fs);gl.linkProgram(pr)}
-  if(!vs||!fs||!gl.getProgramParameter(pr,gl.LINK_STATUS))gl=null;
-  else{gl.useProgram(pr);const buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
-   const al=gl.getAttribLocation(pr,'a');gl.enableVertexAttribArray(al);gl.vertexAttribPointer(al,2,gl.FLOAT,false,0,0);
-   const tx=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tx);gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL,true);
-   for(const[k,v]of[[gl.TEXTURE_MIN_FILTER,gl.LINEAR],[gl.TEXTURE_MAG_FILTER,gl.LINEAR],[gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE],[gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE]])gl.texParameteri(gl.TEXTURE_2D,k,v);
-   uRes=gl.getUniformLocation(pr,'res');uT=gl.getUniformLocation(pr,'t');uG=gl.getUniformLocation(pr,'g')}}
- if(!gl){C.id='c';C.setAttribute('aria-label',G.getAttribute('aria-label'));G.replaceWith(C)}}
-const E=gl?G:C;
+C.id='c';C.setAttribute('aria-label',G.getAttribute('aria-label'));G.replaceWith(C);const E=C;
+
 function labels(){tx2.clearRect(0,0,W,H);tx2.textBaseline='alphabetic';tx2.font=`300 7px ${FONT}`;tx2.fillStyle=`rgba(${INK},.4)`;
  for(let i=0;i<RL.length;i+=3)tx2.fillText(RL[i],RL[i+1],RL[i+2]);
  tx2.font=`300 8px ${FONT}`;try{tx2.letterSpacing='1px'}catch(e){}
  for(let i=0;i<LB.length;i+=4){tx2.fillStyle=LB[i+3];tx2.fillText(LB[i],LB[i+1],LB[i+2])}}
-function post(glitching){if(!gl)return;gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,C);
- gl.uniform2f(uRes,G.width,G.height);gl.uniform1f(uT,t);gl.uniform1f(uG,glitching?1:0);gl.drawArrays(gl.TRIANGLE_STRIP,0,4)}
 function rng(s){return()=>{s|=0;s=s+0x6D2B79F5|0;let t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const R=rng(4170);
 const pick=(a,r=R)=>a[Math.floor(r()*a.length)];
@@ -269,9 +255,9 @@ function buildBg(){
  b.strokeStyle=`rgba(${INK},.07)`;b.setLineDash([2,6]);b.beginPath();b.arc(W/2,H/2,Math.min(W,H)*.42,0,6.283);b.moveTo(W/2,0);b.lineTo(W/2,H);b.moveTo(0,H/2);b.lineTo(W,H/2);b.stroke();b.setLineDash([]);
 }
 
-// Scene + lens pass render at a capped pixel budget (scaled up by CSS); text layer stays at full DPR.
-const BUDGET=3.2e6;
-function setRes(){RS=Math.min(DPR,Math.sqrt(BUDGET/(W*H)))*QUAL;C.width=G.width=Math.round(W*RS);C.height=G.height=Math.round(H*RS);ctx.setTransform(RS,0,0,RS,0,0);buildBg();if(gl)gl.viewport(0,0,G.width,G.height)}
+// Scene renders at full DPR up to a pixel budget, stepping down only if frames run slow; text layer stays at full DPR.
+const BUDGET=1.5e7;
+function setRes(){RS=Math.min(DPR,Math.sqrt(BUDGET/(W*H)))*QUAL;C.width=Math.round(W*RS);C.height=Math.round(H*RS);ctx.setTransform(RS,0,0,RS,0,0);buildBg()}
 function adapt(){const now=performance.now();if(now-qT<2500)return;
  if(fAvg>21&&QUAL>.55){QUAL=Math.max(.55,QUAL-.15);qT=now;qGood=0;setRes()}
  else if(fAvg<13.5&&QUAL<1){if(++qGood>8){QUAL=Math.min(1,QUAL+.15);qT=now;qGood=0;setRes()}}else qGood=0}
@@ -431,7 +417,7 @@ function hud(dt){fAvg+=(dt-fAvg)*.05;if(performance.now()-hudT<400)return;hudT=p
 function migrate(){for(let i=0;i<4;i++){const p=pick(P);if(p===sel)continue;p.g=(p.g+1+(Math.random()*3|0))%4;p.ro=rings[p.g].R*(.4+Math.random()*1.1)}}
 
 function frame(now){const dt=Math.min(50,now-last);last=now;t+=dt/1000;
- update(dt/16.67*SPEED);draw(now);post(t<gUntil);labels();tickPanel(dt);hud(dt);requestAnimationFrame(frame)}
+ update(dt/16.67*SPEED);draw(now);labels();tickPanel(dt);hud(dt);requestAnimationFrame(frame)}
 
 addEventListener('resize',resize);
 let drag=null,grab=null;
@@ -452,6 +438,7 @@ const next=()=>{const nw=W<=700,q=P.filter(p=>!p.dying&&p.x>40&&p.x<(nw?W-40:W-4
 $('mnext').addEventListener('click',next);
 $('pbody').addEventListener('scroll',railUpdate,{passive:true});
 addEventListener('keydown',e=>{if(e.key==='Escape')close();if(e.key==='f'||e.key==='F')setFont(FI+1);if(e.key==='n'||e.key==='N')next()});
+{const n=document.createElement('canvas');n.width=n.height=128;const g=n.getContext('2d'),im=g.createImageData(128,128);for(let i=0;i<im.data.length;i+=4){const v=Math.random()*255|0;im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=255}g.putImageData(im,0,0);$('grain').style.background=`url(${n.toDataURL()})`}
 resize();try{const f=+localStorage.getItem('meridian-font');if(f>0)setFont(f)}catch(e){}setInterval(migrate,3500);requestAnimationFrame(frame);
 }
 </script>
