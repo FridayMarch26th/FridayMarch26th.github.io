@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Poisson menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=VT323&family=IBM+Plex+Sans+Condensed:wght@500&family=IBM+Plex+Mono:wght@400;600&family=Literata:opsz,wght@7..72,400&display=swap" rel="stylesheet">
+<style>
+/* VOICE: quiet, exact, a little alive
+   IDEA: a menu that is sampled rather than laid out: Bridson's probes find every circle's place
+   PICTURE: the whole screen; a centre circle and its patch, repacked into whichever circle is clicked
+   COLOUR and TYPE: a choice of old screens: handheld LCDs, phosphor CRTs, or plain hairlines
+   LAYOUT: full-bleed canvas and nothing else */
+:root{color-scheme:dark;--ink:#f2f2f0;--dim:rgba(242,242,240,.55);--red:#ff604e}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;overscroll-behavior:none}
+canvas{position:fixed;left:0;top:0;display:block;touch-action:manipulation;-webkit-user-select:none;user-select:none;image-rendering:pixelated;image-rendering:crisp-edges}
+.lcd{position:fixed;inset:0;pointer-events:none}
+/* handheld and watch LCDs: a faint grid one LCD pixel apart, soft falloff toward the bezel */
+[data-mode=dmg]{--bg:#9bbc0f;--ink:#0f380f;--sh:15,56,15}
+[data-mode=pocket]{--bg:#c4c8b4;--ink:#1f2219;--sh:31,34,25}
+[data-mode=dmg] .lcd,[data-mode=pocket] .lcd{
+  background:linear-gradient(90deg,rgba(var(--sh),.08) 1px,transparent 1px) 0 0/2px 2px,linear-gradient(rgba(var(--sh),.08) 1px,transparent 1px) 0 0/2px 2px,
+    radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(var(--sh),.28) 100%);box-shadow:inset 0 0 0 10px rgba(var(--sh),.13),inset 0 0 60px rgba(var(--sh),.3)}
+/* phosphor CRTs: glow, scanlines, a curved-glass vignette */
+[data-mode=amber]{--bg:#0c0700;--ink:#ffb000;--glow:255,176,0}
+[data-mode=p1]{--bg:#020c03;--ink:#5bff7a;--glow:91,255,122}
+[data-mode=amber] canvas,[data-mode=p1] canvas{filter:drop-shadow(0 0 1.5px rgba(var(--glow),.75)) drop-shadow(0 0 6px rgba(var(--glow),.35))}
+[data-mode=amber] .lcd,[data-mode=p1] .lcd{
+  background:repeating-linear-gradient(transparent 0 1px,rgba(0,0,0,.45) 1px 2px),radial-gradient(ellipse at 50% 50%,transparent 50%,rgba(0,0,0,.65) 100%);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.7)}
+/* plain: the original hairlines */
+[data-mode=hair]{--bg:#000;--ink:#f2f2f0}
+/* ASCII: a terminal page rebuilt from characters */
+[data-mode=ascii]{--bg:#0b0b0b;--ink:#cfd3d6}
+[data-mode=ascii] .modes button{font:400 12px/1 "IBM Plex Mono",monospace}
+/* e-ink: matte grey paper, slow and slightly smeared */
+[data-mode=eink]{--bg:#e3e1d9;--ink:#262624}
+[data-mode=eink] .modes button{font:400 13px/1 Literata,Georgia,serif}
+[data-mode=eink] .lcd{background:radial-gradient(ellipse at 50% 45%,transparent 70%,rgba(60,58,50,.12) 100%)}
+/* pen plotter: fine liners on warm cartridge paper */
+[data-mode=plot]{--bg:#f3efe6;--ink:#1c203a}
+[data-mode=plot] .lcd{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .4 0 0 0 0 .32 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"),
+  radial-gradient(ellipse at 50% 45%,transparent 60%,rgba(120,100,70,.18) 100%);mix-blend-mode:multiply;opacity:.55}
+/* the mode selector, set in the screen's own face and colours */
+.modes{position:fixed;top:0;right:0;display:flex;gap:0 4px;padding:9px 12px;z-index:2;flex-wrap:wrap;justify-content:flex-end;max-width:70vw}
+.modes button{font:16px/1 Silkscreen,monospace;text-transform:uppercase;color:var(--ink);background:transparent;border:0;padding:8px 8px 9px;min-height:36px;cursor:pointer;opacity:.55;-webkit-font-smoothing:none}
+.modes button:hover{opacity:.85}
+.modes button[aria-pressed=true]{opacity:1;background:var(--ink);color:var(--bg)}
+.modes button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+[data-mode=plot] .modes button{font:400 12px/1 "IBM Plex Mono",monospace;letter-spacing:.06em}
+[data-mode=amber] .modes button,[data-mode=p1] .modes button{font:22px/1 VT323,monospace;text-shadow:0 0 4px var(--ink)}
+[data-mode=amber] .modes button[aria-pressed=true],[data-mode=p1] .modes button[aria-pressed=true]{text-shadow:none;box-shadow:0 0 8px var(--ink)}
+[data-mode=hair] .modes button{font:500 11px/1 "IBM Plex Sans Condensed",sans-serif;letter-spacing:.14em;padding:8px 8px}
+#cyc{display:none}
+.modes[hidden]{display:none!important}
+@media(max-width:820px){.modes button:not(#cyc){display:none}#cyc{display:block;opacity:1}}
+canvas:focus-visible{outline:none}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+</style></head><body>
+<canvas id="cv" tabindex="0" aria-label="Poisson menu. Arrow keys move between circles; Enter packs everything into the chosen circle and grows a new patch from it; Escape regrows from the centre."></canvas>
+<div class="lcd"></div>
+<nav class="modes" id="modes" aria-label="Screen"></nav>
+<div class="sr" id="live" aria-live="polite"></div>
+<script>
+{
+const $=id=>document.getElementById(id),cv=$('cv'),dctx=cv.getContext('2d');
+// screens. Each pixel screen draws the scene into a low-resolution buffer (one screen pixel = P css px)
+// and reduces it to its palette; pal[0] is the unlit screen, the last entry full ink.
+// ghost: how much of last frame's ink survives per 60th of a second (LCD smear, phosphor persistence)
+// red: how far red marks may climb the palette, and how strongly
+const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const MODES=[
+  {id:'dmg',name:'DMG',pal:['#9bbc0f','#8bac0f','#306230','#0f380f'],ghost:.86,dither:1,red:[2,1],font:['Silkscreen',16]},
+  {id:'pocket',name:'Pocket',pal:['#c4c8b4','#8f9584','#555a4c','#1f2219'],ghost:.8,dither:1,red:[2,1],font:['Silkscreen',16]},
+  {id:'amber',name:'Amber',pal:['#0c0700','#4a2a00','#a86000','#ffb000'],ghost:.93,dither:1,red:[2,1],font:['VT323',22]},
+  {id:'p1',name:'Phosphor',pal:['#020c03','#0b3d12','#1f9a35','#5bff7a'],ghost:.94,dither:1,red:[2,1],font:['VT323',22]},
+  {id:'hair',name:'Hairline',raw:1,font:['IBM Plex Sans Condensed',9,500,1.2]},
+  {id:'plot',name:'Plotter',raw:1,pen:1,paper:'#f3efe6',inks:['28,32,58','196,48,40','34,72,168'],font:['IBM Plex Mono',11,400,1]},
+  // late screens draw the scene into the buffer, rebuild it on the page, then set their text crisply on top
+  {id:'ascii',name:'ASCII',kind:'ascii',late:1,P:1,ghost:.5,cw:6,ch:11,bgc:'#0b0b0b',txt:'207,211,214',red:'255,95,86',font:['IBM Plex Mono',10,400,0]}, // 10 px Plex Mono advances exactly 6 px: one glyph per cell
+  {id:'eink',name:'E-ink',kind:'eink',P:1,ghost:.6,pp:[227,225,217],ic:[38,38,36],font:['Literata',13,400,0]}];
+MODES.forEach(m=>{if(m.pal)m.rgb=m.pal.map(hex);if(m.bg){m.bgc=m.bg.map(hex);m.ic=hex(m.ink);m.ac=hex(m.acc);}m.P=m.P||2;});
+let M=MODES[0];try{const k=localStorage.getItem('poisson-mode');M=MODES.find(m=>m.id===k)||M;}catch(_){}
+let P=2;const buf=document.createElement('canvas'),bctx=buf.getContext('2d',{willReadFrequently:true});let ctx=bctx;
+const BAY=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16);
+let Wl=0,Hl=0,gw=null,gr=null,out=null,bgf=null,grain=null;
+const TAU=Math.PI*2,RM=matchMedia('(prefers-reduced-motion: reduce)').matches,TM=RM?.02:1;
+let WHITE='242,242,240',RED='255,96,78',HULL=WHITE,gf=null,ocv=null,octx=null,oimg=null,lateText=[],lastPaint=0;let LW=P; // one screen pixel; a touch over a css pixel in hairline mode
+let W=0,H=0,dpr=1,S=1,SZ=1,CX=0,CY=0,seed=null,nodes=[],fx=[],plays=[],uid=0,pseq=0,last=0;
+const st={stats:{pid:0,cand:0,rej:0,seed:0},item:null,patch:0,ptr:null,hover:null,focus:null,trail:new Set};
+let hulls=[];
+
+const c01=x=>x<0?0:x>1?1:x,lerp=(a,b,u)=>a+(b-a)*u;
+const eOut=u=>1-Math.pow(1-c01(u),3),eInOut=u=>{u=c01(u);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2};
+const T=()=>performance.now()/1000;
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const alive=n=>!n.t1,inter=()=>true;
+function node(o){Object.assign(o,{id:uid++,h:0,t1:0});nodes.push(o);return o;}
+
+function reset(){
+  sizeScreen();
+  S=Math.max(.5,Math.min(1,Math.min(W,H)/760));SZ=Math.max(.82,S);CX=W/2;CY=H/2;
+  nodes=[];fx=[];plays=[];Object.assign(st,{item:null,patch:0,hover:null,focus:null});hulls=[];
+  seed=node({kind:'seed',depth:0,x:CX,y:CY,px:CX,py:CY,r:30*SZ,t0:T()});st.trail=new Set([seed]);
+  openPatch(seed);
+}
+// size the canvases for the current screen; the scene itself is kept
+function sizeScreen(){
+  W=innerWidth;H=innerHeight;dpr=Math.min(3,devicePixelRatio||1);document.documentElement.dataset.mode=M.id;
+  // the plotter draws straight to the page in its pen colours; every other screen draws white and red
+  [WHITE,RED,HULL]=M.inks||['242,242,240','255,96,78','242,242,240'];cv.style.imageRendering='';
+  if(M.raw){ctx=dctx;LW=M.pen?1.05:1.25;cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';return;}
+  // fine-grained screens work at one css pixel, coarsened only on very large windows to keep the frame rate
+  P=Math.max(M.P,Math.sqrt(W*H/1.4e6));ctx=bctx;LW=Math.max(1,P*(M.P<2?1.1:1));Wl=Math.ceil(W/P);Hl=Math.ceil(H/P);
+  buf.width=cv.width=Wl;buf.height=cv.height=Hl;cv.style.width=Wl*P+'px';cv.style.height=Hl*P+'px';
+  gw=new Float32Array(Wl*Hl);gr=new Float32Array(Wl*Hl);gf=new Float32Array(Wl*Hl);out=dctx.createImageData(Wl,Hl);
+  if(M.late){cv.width=Math.round(W*dpr);cv.height=Math.round(H*dpr);cv.style.width=W+'px';cv.style.height=H+'px';
+    ocv=ocv||document.createElement('canvas');ocv.width=Wl;ocv.height=Hl;octx=ocv.getContext('2d');oimg=octx.createImageData(Wl,Hl);}
+  // the ground for the reflect and riso screens: a radial ramp, plus (for riso) static paper grain and
+  // an ink-coverage texture, all computed once per size
+  bgf=grain=null;if(!M.bg)return;
+  const N=Wl*Hl,rn=rng(91);bgf=new Float32Array(N*3);grain=new Float32Array(N*2);const[c0,c1]=M.bgc,rx=Wl/2,ry=Hl*.46,rr=Math.hypot(Wl,Hl)*.55;
+  for(let y=0,i=0;y<Hl;y++)for(let x=0;x<Wl;x++,i++){const u=c01(Math.hypot(x-rx,y-ry)/rr),pg=M.kind==='riso'?(rn()-.5)*9:(rn()-.5)*3;
+    for(let c=0;c<3;c++)bgf[i*3+c]=lerp(c0[c],c1[c],u)+pg;
+    grain[i*2]=.7+.3*rn();grain[i*2+1]=.72+.28*rn();}
+}
+function setMode(m){M=m;try{localStorage.setItem('poisson-mode',m.id);}catch(_){}sizeScreen();drawModes();say(m.name+' screen');}
+function drawModes(){
+  const i=MODES.indexOf(M),nx=MODES[(i+1)%MODES.length];
+  $('modes').innerHTML=MODES.map(m=>`<button type="button" data-m="${m.id}" aria-pressed="${m===M}">${m.name}</button>`).join('')+
+    `<button type="button" id="cyc" data-m="${nx.id}" aria-label="Screen: ${M.name}. Switch to ${nx.name}">${M.name} &rsaquo;</button>`;
+}
+$('modes').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setMode(MODES.find(m=>m.id===b.dataset.m));});
+function say(s){$('live').textContent=s;}
+
+// ---- playback of a sampling log: each step probes from a parent; candidates are rejected or accepted ----
+function play(steps,dur,onAcc,kind,delay=0){plays.push({steps,t0:T()+delay*TM,dur:dur*TM,c:0,onAcc,kind});}
+function runPlays(t){
+  for(const p of plays){
+    const u=(t-p.t0)/p.dur;if(u<0)continue;
+    const target=u>=1?p.steps.length:Math.round(eInOut(u)*p.steps.length);
+    for(;p.c<target;p.c++){
+      const s=p.steps[p.c];
+      if(s.ring)fx.push({k:0,x:s.px,y:s.py,r1:s.ring[0],r2:s.ring[1],t,life:.55});
+      if(p.kind==='patch'&&st.stats.pid===p.pid){st.stats.cand+=s.cands.length;st.stats.rej+=s.cands.filter(c=>c.b).length;}
+      for(const c of s.cands){
+        if(c.b)fx.push({k:1,x:c.x,y:c.y,bx:c.b.edge?null:c.b.x,by:c.b.edge?null:c.b.y,t,life:.7});
+        else fx.push({k:2,x:c.x,y:c.y,px:s.px,py:s.py,t,life:.75});}
+      if(s.acc)p.onAcc(s.acc,s,t);}
+  }
+  plays=plays.filter(p=>p.c<p.steps.length);
+}
+
+// pack down: everything shrinks into the sink circle, farthest first, following it as it moves.
+// returns how long until everything has gone
+function packDown(list,t,sink){
+  if(!list.length)return 0;const c=pos(sink,t);
+  const ds=list.map(n=>Math.hypot(n.x-c.x,n.y-c.y)),mx=Math.max(1,...ds);
+  list.forEach((n,i)=>{n.sink=sink;n.dd=.55;n.t1=t+((1-ds[i]/mx)*.45+Math.random()*.06)*TM;});
+  return 1.05*TM;
+}
+
+// ---- a patch: Bridson from the clicked circle, inside a disc, around whatever is still standing ----
+// every sample is a button; sizes shrink from the origin toward the rim
+// plain Bridson from the clicked circle, inside a disc: sizes fall off toward the rim,
+// with a log-normal-ish jitter (about ×0.45 to ×2.2) and the odd large circle
+function patchLog(o){
+  const Rp=Math.min(220*S,Math.max(W,H)*.45),base=(uid*7919+pseq*104729)|0;let best=[],bestN=-1;
+  const fixed=nodes.filter(n=>alive(n)).map(n=>({x:n.x,y:n.y,r:n.r})); // includes the origin itself, at its final place and size
+  for(let attempt=0;attempt<6;attempt++){
+    const rand=rng(base+attempt*977),rmax=24*S,rmin=4.5*S,gap=3.5*S;
+    const size=(x,y)=>{const b=lerp(rmax,rmin,Math.pow(c01(Math.hypot(x-o.x,y-o.y)/Rp),.7))*Math.exp((rand()-.5)*1.6)*(rand()<.07?1.9:1);return Math.max(2.6*S,Math.min(44*S,b));};
+    const P=[],act=[{x:o.x,y:o.y,r:o.r,node:o}],steps=[];
+    while(act.length&&P.length<130){
+      const ai=rand()*act.length|0,p=act[ai],cands=[];let res=null;const rL=size(p.x,p.y);
+      for(let k=0;k<16;k++){
+        const a=rand()*TAU,dist=p.r+rL+gap+rand()*(p.r+rL)*.9,x=p.x+Math.cos(a)*dist,y=p.y+Math.sin(a)*dist,r=size(x,y);
+        let b=null;
+        if(Math.hypot(x-o.x,y-o.y)+r>Rp||x<r+6||y<r+6||x>W-r-6||y>H-r-6)b={edge:true};
+        else{for(const q of fixed)if(Math.hypot(q.x-x,q.y-y)<q.r+r+gap*1.6){b=q;break;}
+          if(!b)for(const q of P)if(Math.hypot(q.x-x,q.y-y)<q.r+r+gap){b=q;break;}}
+        cands.push({x,y,b});if(!b){res={x,y,r,parent:p};break;}}
+      steps.push({px:p.x,py:p.y,ring:[p.r+rL+gap,2*(p.r+rL)+gap],cands,acc:res});
+      if(res){P.push(res);act.push(res);}else{act[ai]=act[act.length-1];act.pop();}
+    }
+    steps.seed=(base+attempt*977)>>>0;
+    if(P.length>12)return steps;
+    if(P.length>bestN){bestN=P.length;best=steps;}
+  }
+  return best;
+}
+// clicking any circle: everything else packs down into it while it glides to the centre and
+// takes the seed's size; it becomes the new root and a fresh patch grows from it
+function openPatch(o){
+  const t=T(),c=pos(o,t),R0=30*SZ;plays=[];st.flashT=t;
+  const wait=packDown(nodes.filter(n=>alive(n)&&n!==o),t,o);
+  for(const h of hulls)if(!h.t1){h.t1=t;h.sink=o;}
+  fx.push({k:3,x:c.x,y:c.y,r:c.r,t,life:.8});
+  const move=Math.hypot(c.x-CX,c.y-CY)>1||Math.abs(o.r-R0)>.5;
+  if(move){o.mv={fx:c.x,fy:c.y,fr:c.r,t0:t,d:1};o.x=CX;o.y=CY;o.r=R0;}
+  o.px=CX;o.py=CY;o.t0=Math.min(o.t0,t-.6*TM);o.par=null;o.depth=0;o.kind='seed';seed=o;
+  st.item=o;st.patch=++pseq;st.trail=new Set([o]);st.focus=st.focus===o?o:null;
+  const steps=patchLog(o),pid=st.patch;st.stats={pid,cand:0,rej:0,seed:(steps.seed||0)%100000};
+  const dur=Math.min(2.2,Math.max(1.2,.8+steps.length/170)),delay=Math.max(wait,move?1:0)+.1;
+  play(steps,dur,(q,s,tt)=>{
+    const par=q.parent.node||o;q.node=node({kind:'fill',par,depth:par.depth+1,x:q.x,y:q.y,px:s.px,py:s.py,r:q.r,t0:tt,patch:pid});
+  },'patch',delay);plays[plays.length-1].pid=pid;
+  // the finished patch is known now: its final bounding radius and sample count (ASCII pins its labels to these)
+  let rF=R0,nF=0;for(const q of steps)if(q.acc){nF++;rF=Math.max(rF,Math.hypot(q.acc.x-CX,q.acc.y-CY)+q.acc.r);}
+  hulls.push({root:o,pid,r:0,t0:t+delay*TM,t1:0,sink:null,rF:rF+9*S,nF});
+  say('New patch');
+}
+function activate(n){
+  if(!n)return;
+  openPatch(n);
+}
+
+// ---- hit testing and input ----
+function pos(n,t){
+  let hx=n.x,hy=n.y,r=n.r;
+  if(n.mv){const u=eInOut((t-n.mv.t0)/(n.mv.d*TM));hx=lerp(n.mv.fx,n.x,u);hy=lerp(n.mv.fy,n.y,u);r=lerp(n.mv.fr,n.r,u);if(u>=1)n.mv=null;}
+  const a=eOut((t-n.t0)/(.6*TM));let k=a,x=lerp(n.px,hx,a),y=lerp(n.py,hy,a);
+  if(n.t1){const d=1-eInOut((t-n.t1)/((n.dd||.4)*TM));k*=d;
+    const s=n.sink?pos(n.sink,t):{x:n.px,y:n.py};x=lerp(s.x,x,d);y=lerp(s.y,y,d);}
+  return{k,x,y,r:r*k};
+}
+function hit(x,y){const t=T();let best=null;
+  let bd=1e9;for(const n of nodes){if(!alive(n)||t-n.t0<.15*TM)continue;const p=pos(n,t),d=Math.hypot(p.x-x,p.y-y)-p.r;if(d<=6&&d<bd){bd=d;best=n;}}
+  return best;}
+cv.addEventListener('pointermove',e=>{st.ptr={x:e.clientX,y:e.clientY};
+  const n=hit(e.clientX,e.clientY);st.hover=n;cv.style.cursor=n?'pointer':'default';
+  });
+cv.addEventListener('pointerleave',()=>{st.hover=null;st.ptr=null;});
+cv.addEventListener('click',e=>activate(hit(e.clientX,e.clientY)));
+function focusables(){const t=T();return nodes.filter(n=>alive(n)&&inter(n)&&t-n.t0>.15*TM)
+  .sort((a,b)=>a===seed?-1:b===seed?1:a.depth!==b.depth?a.depth-b.depth:(Math.atan2(a.x-CX,-(a.y-CY))+TAU)%TAU-(Math.atan2(b.x-CX,-(b.y-CY))+TAU)%TAU);}
+document.addEventListener('keydown',e=>{if((e.key==='m'||e.key==='M')&&!e.target.closest('button')){setMode(MODES[(MODES.indexOf(M)+1)%MODES.length]);}});
+cv.addEventListener('keydown',e=>{
+  const f=focusables();let i=f.indexOf(st.focus);
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){i=(i+1)%f.length;}
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp'){i=(i-1+f.length)%f.length;}
+  else if(e.key==='Enter'||e.key===' '){e.preventDefault();activate(st.focus||seed);if(!st.focus)st.focus=seed;return;}
+  else if(e.key==='Escape'){st.focus=null;openPatch(seed);return;}
+  else return;
+  e.preventDefault();st.focus=f[i];say(st.focus===seed?'Centre circle':'Circle');});
+
+// ---- drawing ----
+// set a string on a circle, one glyph at a time, centred on angle c. top: reads clockwise over the
+// top; bottom: reads left to right under the circle, glyphs upright
+// header and footer, set on the LCD in the same pixel face; the long forms give way on narrow screens
+const face=()=>`${M.font[2]||400} ${M.font[1]}px "${M.font[0]}",monospace`,fsp=()=>M.font[3]||0,snap=v=>M.raw||M.late?v:Math.round(v/P)*P;
+function hud(t){
+  const S_=st.stats,live=nodes.filter(m=>m.patch===S_.pid&&alive(m)&&t>=m.t0);let dp=0;for(const m of live)dp=Math.max(dp,m.depth);
+  ctx.font=face();ctx.fillStyle=M.late?`rgba(${M.txt},.85)`:M.raw?`rgba(${WHITE},.6)`:'#fff';ctx.textBaseline='alphabetic';const fs=M.font[1],m=16,top=snap(m+fs*.85),bot=snap(H-m-P);if('letterSpacing' in ctx)ctx.letterSpacing=fsp()+'px';
+  const row=(y,l,r)=>{for(const L of l){const wl=ctx.measureText(L).width;if(wl>W-2*m)continue;ctx.textAlign='left';ctx.fillText(L,m,y);
+    for(const Rr of r){const wr=ctx.measureText(Rr).width;if(wl+wr+4*P<=W-2*m){ctx.textAlign='left';ctx.fillText(Rr,snap(W-m-wr),y);break;}}return;}};
+  const id=String(S_.pid).padStart(2,'0');
+  if(M.kind==='ascii'){
+    // the terminal page: everything sits on the character grid
+    const cols=Math.floor(W/M.cw),rows=Math.floor(H/M.ch),L=`${live.length} CIRCLES  ${S_.cand} TRIED  ${S_.rej} REJECTED  DEPTH ${dp}`,R_=`PATCH ${id}  SEED ${S_.seed}`;
+    gridPut('POISSON MENU',2,1);if(L.length+R_.length+6<cols){gridPut(L,2,rows-2);gridPut(R_,cols-2-R_.length,rows-2);}else gridPut(`${live.length} CIRCLES  PATCH ${id}`,2,rows-2);return;}
+  row(top,['POISSON MENU','POISSON'],[]);
+  row(bot,[`${live.length} CIRCLES  ${S_.cand} TRIED  ${S_.rej} REJECTED  DEPTH ${dp}`,`${live.length} CIRCLES  ${S_.rej} REJ`,`${live.length} CIRCLES`],[`PATCH ${id}  SEED ${S_.seed}`,`PATCH ${id}`]);
+}
+// reduce the buffer to the four LCD greens: white ink and red ink are separated, each holds an
+// after-image that fades over a few frames, and a 4x4 Bayer matrix dithers the in-between levels.
+// red never reaches the darkest green, so hover and rejection marks stay a shade lighter than lines
+function lcd(dt,t){
+  if(M.kind==='ascii')return ascii(dt);if(M.kind==='eink')return eink(dt,t);
+  const d=bctx.getImageData(0,0,Wl,Hl).data,o=out.data,gh=RM?0:Math.pow(M.ghost,dt*60),C=M.rgb,n=C.length-1,[rk,rs]=M.red;
+  for(let y=0,i=0;y<Hl;y++){const by=(y&3)*4;for(let x=0;x<Wl;x++,i++){
+    const j=i*4,r=d[j],g=d[j+1],ar=r>g?(r-g)/159:0,aw=Math.max(0,(g-96*ar)/242);
+    const w=gw[i]=Math.max(Math.min(1,aw*1.9),gw[i]*gh),rd=gr[i]=Math.max(Math.min(1,ar*1.9),gr[i]*gh),th=BAY[by+(x&3)];
+    let k=M.dither?Math.min(n,Math.floor(w*n+th)):(w>.45?n:0);
+    const kr=Math.min(rk,Math.floor(rd*rs*(rk+.4)+th));if(kr>k)k=kr;
+    if(M.shadow&&k===0&&x>0&&y>0&&gw[i-Wl-1]>.45)k=1;
+    const c=C[k];o[j]=c[0];o[j+1]=c[1];o[j+2]=c[2];o[j+3]=255;}}
+  dctx.putImageData(out,0,0);
+}
+// count: how many glyphs are typed so far (the layout is always the whole string, so glyphs land in place);
+// cur: draw a block cursor in the next slot
+// separate the buffer into white ink and red ink, each with a fading after-image
+function inks(dt){
+  const d=bctx.getImageData(0,0,Wl,Hl).data,gh=RM?0:Math.pow(M.ghost,dt*60);
+  for(let i=0,N=Wl*Hl;i<N;i++){const j=i*4,r=d[j],g=d[j+1],ar=r>g?(r-g)/159:0,aw=Math.max(0,(g-96*ar)/242);
+    gw[i]=Math.max(Math.min(1,aw*1.7),gw[i]*gh);gr[i]=Math.max(Math.min(1,ar*1.7),gr[i]*gh);}
+}
+// ASCII: each character cell is read for how much ink it holds and which way that ink runs. Cells holding
+// a single stroke become - | / \ by its direction (from the cell's second moments); denser cells climb a
+// density ramp; cells that are mostly red marks print in red
+function ascii(dt){
+  inks(dt);const cw=M.cw,ch=M.ch,cols=Math.ceil(Wl/cw),rows=Math.ceil(Hl/ch),RAMP=' .:-=+*#%@',Q=Math.PI/8;
+  dctx.setTransform(dpr,0,0,dpr,0,0);dctx.fillStyle=M.bgc;dctx.fillRect(0,0,W,H);
+  dctx.font=`400 ${M.font[1]}px "${M.font[0]}",monospace`;dctx.textBaseline='top';dctx.textAlign='left';
+  for(let cy=0;cy<rows;cy++)for(let cx=0;cx<cols;cx++){
+    let s=0,sr=0,mx=0,my=0,xx=0,yy=0,xy=0;const x0=cx*cw,y0=cy*ch,x1=Math.min(x0+cw,Wl),y1=Math.min(y0+ch,Hl);
+    for(let y=y0;y<y1;y++){let i=y*Wl+x0;for(let x=x0;x<x1;x++,i++){const w=gw[i];sr+=gr[i];if(w>.02){s+=w;mx+=w*x;my+=w*y;xx+=w*x*x;yy+=w*y*y;xy+=w*x*y;}}}
+    if(s+sr<.7)continue;
+    const cov=s/(cw*ch);let c='.';
+    if(s>.7){mx/=s;my/=s;const a=xx/s-mx*mx,b=yy/s-my*my,d=xy/s-mx*my,tr=a+b,an=tr>0?Math.sqrt((a-b)*(a-b)+4*d*d)/tr:0;
+      if(an>.6&&cov<.4){const g=.5*Math.atan2(2*d,a-b),q=Math.abs(g);c=q<Q?'-':q>3*Q?'|':g>0?'\\':'/';}
+      else c=RAMP[Math.min(9,1+Math.floor(cov*14))];}
+    dctx.fillStyle=sr>s*.6?`rgb(${M.red})`:`rgba(${M.txt},${Math.min(1,.5+cov*3)})`;dctx.fillText(c,x0*P,y0*P);}
+}
+// e-ink: sixteen greys. Old images leave a faint ghost that fades in well under a second; there is no
+// full-screen refresh flash between repacks
+function eink(dt,t){
+  // one pass: separate the inks, age the ghost, quantise to sixteen greys through a small palette,
+  // and write whole pixels through a 32-bit view
+  const N=Wl*Hl,o32=new Uint32Array(out.data.buffer),Pp=M.pp,I=M.ic;
+  const pal=M.pal32||(M.pal32=Uint32Array.from({length:16},(_,q)=>{const u=q/15,c=[0,1,2].map(k=>Math.round(Pp[k]+(I[k]-Pp[k])*u));return (255<<24|c[2]<<16|c[1]<<8|c[0])>>>0;}));
+  {const d=bctx.getImageData(0,0,Wl,Hl).data,gh=RM?0:Math.pow(M.ghost,dt*60),gd=Math.pow(.982,dt*60);
+    for(let i=0,j=0;i<N;i++,j+=4){const r=d[j],g=d[j+1];let aw,ar=0;if(r>g){ar=(r-g)/159;aw=(g-96*ar)/242;}else aw=g/242;
+      let w=aw*1.7;if(w>1)w=1;const wg=gw[i]*gh;if(wg>w)w=wg;gw[i]=w;
+      let rr=ar*1.7;if(rr>1)rr=1;const rg=gr[i]*gh;if(rg>rr)rr=rg;gr[i]=rr;
+      let v=w+rr*.7;if(v>1)v=1;let gl=gf[i]*gd;if(v*.075>gl)gl=v*.075;gf[i]=gl;
+      o32[i]=pal[((v>gl?v:gl)*15+.5)|0];}}
+  dctx.putImageData(out,0,0);
+}
+// ASCII: set a string on the character grid at a column and row
+function gridPut(str,col,row,count=1e9,cur=false){
+  const cw=M.cw,ch=M.ch;ctx.font=`400 ${M.font[1]}px "${M.font[0]}",monospace`;ctx.textBaseline='top';ctx.textAlign='left';if('letterSpacing' in ctx)ctx.letterSpacing='0px';
+  for(let i=0;i<str.length&&i<=count;i++){const ch_=i<count?str[i]:cur?'\u2588':'';if(ch_)ctx.fillText(ch_,(col+i)*cw,row*ch);}
+}
+// ASCII: the boundary labels run level on the grid instead, the top one on the row above the circle and
+// the bottom one on the row below, centred on it, typing in the same way
+// characters resolve left to right out of a short run of shuffling random glyphs ahead of them
+const SCR='!#$%&*+-/0123456789:<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_{|}~';
+function gridText(str,cx,cy,R,c,top,count,cur){
+  str=str.toUpperCase();const cw=M.cw,ch=M.ch,col=Math.round(cx/cw-str.length/2),row=top?Math.floor((cy-R-2)/ch)-1:Math.ceil((cy+R+2)/ch);
+  if(count>=str.length)return gridPut(str,col,row);
+  gridPut(str,col,row,count);const run=Math.min(str.length,count+(top||count>0?9:0)),tk=Math.floor(T()*18),al=ctx.fillStyle;
+  ctx.globalAlpha=.55;for(let i=count;i<run;i++){if(str[i]===' ')continue;const k=(tk*31+i*17+(top?0:7))%SCR.length;ctx.fillText(SCR[(k*k+tk)%SCR.length],(col+i)*cw,row*ch);}ctx.globalAlpha=1;
+}
+function arcText(str,cx,cy,R,c,top,count=1e9,cur=false){
+  if(M.late&&ctx===bctx){lateText.push([str,cx,cy,R,c,top,count,cur,ctx.fillStyle]);return;}
+  str=str.toUpperCase();ctx.font=face();if('letterSpacing' in ctx)ctx.letterSpacing='0px';ctx.textAlign='center';ctx.textBaseline='middle';
+  const sp=fsp()||(M.raw?1.2:P),ws=[...str].map(ch=>ctx.measureText(ch).width);let tot=ws.reduce((a,w)=>a+w+sp,0)-sp;
+  if(tot>R*Math.PI*.9)return;let a=c+(top?-1:1)*tot/2/R;
+  const fs=M.font[1];
+  for(let i=0;i<str.length&&i<=count;i++){const w=ws[i];a+=(top?1:-1)*(w/2)/R;
+    if(i===count&&!cur)break;
+    ctx.save();ctx.translate(cx+Math.cos(a)*R,cy+Math.sin(a)*R);ctx.rotate(top?a+Math.PI/2:a-Math.PI/2);
+    if(i<count)ctx.fillText(str[i],0,.5);else ctx.fillRect(-Math.max(w,fs*.45)/2,-fs*.38,Math.max(w,fs*.45),fs*.76);
+    ctx.restore();
+    a+=(top?1:-1)*(w/2+sp)/R;}
+}
+function ring(x,y,r){ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,TAU);}
+function frame(){
+  const t=T(),dt=Math.min(.05,t-last);last=t;
+  runPlays(t);
+  nodes=nodes.filter(n=>!n.t1||t<n.t1+((n.dd||.4)+.1)*TM);if(st.focus&&!nodes.includes(st.focus))st.focus=null;
+  fx=fx.filter(f=>t-f.t<f.life*TM);
+  if(M.raw)ctx.setTransform(dpr,0,0,dpr,0,0);else ctx.setTransform(1/P,0,0,1/P,0,0);ctx.globalCompositeOperation='source-over';ctx.fillStyle=M.paper||'#000';ctx.fillRect(0,0,W,H);ctx.lineWidth=LW;
+  // probes
+  for(const f of fx){let a=1-(t-f.t)/(f.life*TM);a*=a;
+    if(f.k===0){ctx.setLineDash([2,3]);ctx.strokeStyle=`rgba(${WHITE},${.2*a})`;ctx.beginPath();ring(f.x,f.y,f.r1);ring(f.x,f.y,f.r2);ctx.stroke();ctx.setLineDash([]);}
+    else if(f.k===1){const z=2.4;ctx.strokeStyle=`rgba(${RED},${.72*a})`;ctx.beginPath();ctx.moveTo(f.x-z,f.y-z);ctx.lineTo(f.x+z,f.y+z);ctx.moveTo(f.x+z,f.y-z);ctx.lineTo(f.x-z,f.y+z);ctx.stroke();
+      if(f.bx!=null){ctx.strokeStyle=`rgba(${RED},${.28*a})`;ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.bx,f.by);ctx.stroke();}}
+    else if(f.k===2){ctx.strokeStyle=`rgba(${WHITE},${.55*a})`;ctx.beginPath();ctx.moveTo(f.px,f.py);ctx.lineTo(f.x,f.y);ctx.stroke();}
+    else{const u=1-a;ctx.strokeStyle=`rgba(${WHITE},${.4*a})`;ctx.beginPath();ring(f.x,f.y,f.r+4+22*eOut((t-f.t)/(f.life*TM)));ctx.stroke();}}
+  // enclosing circle, centred on the root: its radius eases out to just past the farthest circle
+  // as the patch grows; on repack it shrinks into the clicked circle with everything else
+  for(const h of hulls){
+    if(t<h.t0)continue;const c=pos(h.root,t);
+    if(!h.t1){let m=c.r;for(const n of nodes){if(n.patch!==h.pid||t<n.t0)continue;const q=pos(n,t);m=Math.max(m,Math.hypot(q.x-c.x,q.y-c.y)+q.r);}
+      const tgt=m+9*S;h.r=h.r?h.r+(tgt-h.r)*Math.min(1,dt*7/TM):tgt;}
+    let k=1,x=c.x,y=c.y;
+    if(h.t1){k=1-eInOut((t-h.t1)/(.55*TM));const q=pos(h.sink,t);x=lerp(q.x,h.x??x,k);y=lerp(q.y,h.y??y,k);}else{h.x=x;h.y=y;}
+    if(k<=.002){h.dead=1;continue;}
+    const fa=k*c01((t-h.t0)/(.3*TM));ctx.strokeStyle=`rgba(${HULL},${.42*fa})`;ctx.beginPath();ring(x,y,h.r*k);ctx.stroke();
+    // type set on the circle: what is being drawn across the top, its measurements upright along the bottom
+    const A=M.kind==='ascii';
+    if(h.r*k>70||(A&&!h.t1)){const n=nodes.filter(m=>m.patch===h.pid&&t>=m.t0).length,id=String(h.pid).padStart(2,'0');
+      // ASCII pins its labels where the finished boundary will be, with numbers padded to their final width,
+      // so nothing slides about while the patch grows
+      const R=A?h.rF+8:h.r*k+8,lx=A?h.root.x:x,ly=A?h.root.y:y,nS=A?String(n).padStart(String(h.nF).length):n,rS=Math.round(A?h.rF:h.r);
+      ctx.fillStyle=`rgba(${HULL},${(M.pen?.85:.62)*fa})`;
+      // the labels type in as the patch grows: top first, then bottom, finishing as the last sample lands
+      const L1=`bridson · patch ${id} · ${nS} samples`,L2=`r ${rS} · seed ${st.stats.pid===h.pid?st.stats.seed:'-'}`;
+      const pl=plays.find(q=>q.pid===h.pid);h.f=Math.max(h.f||0,RM||h.t1?1:pl?pl.c/Math.max(1,pl.steps.length):1);
+      const N=Math.floor(h.f*(L1.length+L2.length)),typing=N<L1.length+L2.length,blink=typing&&Math.floor(t*4)%2===0;
+      arcText(L1,lx,ly,R,-Math.PI*3/4,true,Math.min(N,L1.length),blink&&N<L1.length);
+      if(N>=L1.length||A)arcText(L2,lx,ly,R,Math.PI/4,false,Math.max(0,N-L1.length),blink);}} // both labels sit 45° anticlockwise of top and bottom
+  hulls=hulls.filter(h=>!h.dead);
+  // circles; the active circle comes last and is filled with the ground, so everything grows out from
+  // under it and packs back in behind it
+  const order=nodes.filter(n=>n!==seed);if(seed&&nodes.includes(seed))order.push(seed);
+  for(const n of order){
+    if(t<n.t0)continue;const p=pos(n,t);if(p.k<=.002)continue;
+    const on=(n===st.hover||n===st.focus)&&alive(n);n.h+=((on?1:0)-n.h)*Math.min(1,dt*12);
+    let fade=n.t1?p.k:1;const col=WHITE,base=n.kind==='seed'?.78:M.pen?.82:.5;
+    // plotter: circles grow like everywhere else (pen strokes sweeping round looked messy at small sizes);
+    // a touch of ink still pools where each stroke starts
+    let ext=1;if(n.a0===undefined)n.a0=Math.random()*TAU;if(M.pen)fade=1;
+    if(n===seed&&ext>.99){ctx.fillStyle=M.paper||'#000';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,TAU);ctx.fill();}
+    ctx.strokeStyle=`rgba(${col},${Math.min(1,(base+.3*n.h)*fade)})`;ctx.beginPath();
+    if(ext>=.999)ring(p.x,p.y,p.r);else{ctx.moveTo(p.x+Math.cos(n.a0)*p.r,p.y+Math.sin(n.a0)*p.r);ctx.arc(p.x,p.y,p.r,n.a0,n.a0+TAU*ext);}
+    ctx.stroke();
+    if(M.pen&&ext>.01){ctx.fillStyle=`rgba(${col},.5)`;const e=n.a0+TAU*ext;ctx.beginPath();
+      ctx.arc(p.x+Math.cos(n.a0)*p.r,p.y+Math.sin(n.a0)*p.r,.9,0,TAU);if(ext<.999){ctx.moveTo(p.x+Math.cos(e)*p.r+.8,p.y+Math.sin(e)*p.r);ctx.arc(p.x+Math.cos(e)*p.r,p.y+Math.sin(e)*p.r,.8,0,TAU);}ctx.fill();}
+    if(n.h>.01){
+      // halo stays inside half the gap to the nearest neighbour, so it never touches another circle
+      let gap=1e9;for(const m of nodes){if(m===n||t<m.t0)continue;const q=pos(m,t);if(q.k<=.002)continue;gap=Math.min(gap,Math.hypot(q.x-p.x,q.y-p.y)-q.r-p.r);}
+      const off=Math.min(3+3*n.h,gap*.5-LW);
+      if(off>1){ctx.strokeStyle=`rgba(${col},${.3*n.h*fade})`;ctx.beginPath();ring(p.x,p.y,p.r+off);ctx.stroke();}
+      const rr=Math.max(1.4,p.r*.5)*(.6+.4*n.h);ctx.strokeStyle=`rgba(${RED},${.9*n.h*fade})`;ctx.beginPath();ring(p.x,p.y,rr);ctx.stroke();}
+  }
+  if(M.late){lcd(dt,t);ctx=dctx;dctx.setTransform(dpr,0,0,dpr,0,0);dctx.imageSmoothingEnabled=true;
+    for(const a of lateText){const al=+(/,\s*([\d.]+)\)$/.exec(a[8])||[0,1])[1];dctx.fillStyle=`rgba(${M.txt},${al/.62})`;M.kind==='ascii'?gridText(...a.slice(0,8)):arcText(...a.slice(0,8));}
+    lateText=[];hud(t);ctx=bctx;}
+  else{hud(t);if(!M.raw)lcd(dt,t);}
+  requestAnimationFrame(frame);
+}
+let rt=0;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(reset,120);}).observe(document.body);
+drawModes();reset();last=T();requestAnimationFrame(frame);
+}
+</script>
+</body></html>
