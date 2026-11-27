@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Circle Edge Bundling</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+/*
+VOICE: a quiet instrument; a pen plot on paper, fine even lines, lots of air.
+IDEA: a plotter sheet: the figure, and a ruled annotation block drawn by the same pen.
+PICTURE: the canvas itself, full bleed, ring centred in the space beside the controls.
+COLOUR and TYPE: off-white grained stock, blue-black ink, red pen for attractors; DM Mono light, like plotter lettering.
+LAYOUT: controls as a ruled legend at top-left, no box fill; hint as a caption under the figure.
+*/
+:root{color-scheme:light;--bg:#efeae0;--ink:#23232b;--mute:#6d6860;--red:#c8322a;--rule:rgba(35,35,43,.4);--pen:rgba(35,35,43,.5);--redpen:rgba(200,50,42,.6)}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:300 12px/1.45 "DM Mono",ui-monospace,monospace;overflow:hidden}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;display:block;touch-action:none;cursor:crosshair}
+#panel{position:fixed;top:20px;left:20px;width:232px;max-height:calc(100vh - 40px);overflow:auto;border:0.8px solid var(--rule);padding:12px 14px 14px;scrollbar-width:thin}
+#panel h1{font-size:13px;font-weight:400;margin:0 0 2px;padding-bottom:8px;border-bottom:0.8px solid var(--rule);display:flex;justify-content:space-between;align-items:baseline;cursor:pointer;user-select:none;letter-spacing:.02em}
+#panel h1 #ptog{color:var(--mute)}
+#panel.closed{width:auto}
+#panel.closed h1{border:0;padding:0;margin:0;gap:14px}
+#panel.closed .body{display:none}
+.row{display:grid;grid-template-columns:1fr auto;gap:0 8px;margin-top:5px}
+.row label{color:var(--mute)}
+.row output{font-variant-numeric:tabular-nums;text-align:right}
+.row.red label,.row.red output{color:var(--red)}
+input[type=range]{grid-column:1/-1;width:100%;margin:2px 0 0;height:16px;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:0.8px;background:var(--pen)}
+input[type=range]::-moz-range-track{height:0.8px;background:var(--pen)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;margin-top:-4.6px;border-radius:50%;border:0.9px solid var(--pen);background:var(--bg)}
+input[type=range]::-moz-range-thumb{width:9px;height:9px;border-radius:50%;border:0.9px solid var(--pen);background:var(--bg)}
+.row.red input[type=range]::-webkit-slider-runnable-track{background:var(--redpen)}
+.row.red input[type=range]::-moz-range-track{background:var(--redpen)}
+.row.red input[type=range]::-webkit-slider-thumb{border-color:var(--redpen)}
+.row.red input[type=range]::-moz-range-thumb{border-color:var(--redpen)}
+.seg{display:grid;grid-template-columns:1fr 1fr;margin-top:10px;border:0.8px solid var(--pen)}
+.seg button{border:0;margin:0}
+.seg button+button{border-left:0.8px solid var(--pen)}
+#mHub{color:var(--red)}
+/* the active choice is hatched, as a plotter would fill it */
+.seg button.on{background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(35,35,43,.3) 3px 3.8px)}
+#mHub.on{background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(200,50,42,.35) 3px 3.8px)}
+.btns{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:12px}
+button{font:inherit;color:var(--ink);background:transparent;border:0.8px solid var(--pen);border-radius:0;padding:6px;cursor:pointer;min-height:30px}
+button:hover{background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(35,35,43,.12) 3px 3.8px)}
+button:focus-visible,input:focus-visible{outline:0.8px dashed var(--pen);outline-offset:3px}
+.sep{border-top:0.8px dashed var(--rule);margin:12px 0 2px}
+#stats{margin-top:10px;padding-top:8px;border-top:0.8px solid var(--rule);color:var(--mute);font-variant-numeric:tabular-nums}
+#hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:var(--mute);font-size:11px;white-space:nowrap;pointer-events:none}
+#mbar{display:none}
+#picon{display:none}
+.mob{display:none}
+/* narrow screens: circle centred, menu tucked away as a small tab, pops over the figure when opened */
+@media(max-width:760px),(max-height:500px){
+  #hint{display:none}
+  .dsk{display:none}.mob{display:inline}
+  #panel{top:12px;right:12px;left:auto;width:auto;max-width:calc(100vw - 24px);background:rgba(239,234,224,.78);-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);padding:10px 12px}
+  #panel:not(.closed){left:12px;width:auto;max-height:calc(100vh - 100px);padding:12px 14px 14px;box-shadow:none}
+  #panel h1{min-height:28px;align-items:center}
+  /* tucked away: just a small icon tab in the top-right corner */
+  #panel.closed{padding:0 14px;height:44px;display:flex;align-items:center}
+  #panel.closed h1{min-height:0;height:44px;gap:12px}
+  #panel.closed #ptog{display:none}
+  #panel.closed #picon{display:block;color:var(--ink)}
+  input[type=range]{height:28px}
+  button{min-height:40px}
+  /* the main actions live on the sheet itself; the menu keeps only the fine-tuning */
+  #modeBox,#bScatter{display:none}
+  #mbar{display:grid;grid-template-columns:2fr 1fr;gap:8px;position:fixed;left:50%;transform:translateX(-50%);bottom:max(18px,env(safe-area-inset-bottom));width:min(348px,calc(100vw - 24px))}
+  #mbar .mseg{display:grid;grid-template-columns:1fr 1fr;border:0.8px solid var(--pen);background:var(--bg) var(--paper,none)}
+  #mbar .mseg button{border:0;min-height:44px}
+  #mbar .mseg button+button{border-left:0.8px solid var(--pen)}
+  #mScatter{min-height:44px;background:var(--bg) var(--paper,none)}
+  #mbar #m2Hub{color:var(--red)}
+  #mbar #m2Node.on{background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(35,35,43,.3) 3px 3.8px)}
+  #mbar #m2Hub.on{background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(200,50,42,.35) 3px 3.8px)}
+}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="panel">
+  <h1 id="ptitle" aria-label="Settings"><span id="ptxt"><span class="dsk">Edge bundling</span><span class="mob">Options</span></span> <span id="ptog">–</span><svg id="picon" width="18" height="14" viewBox="0 0 18 14" aria-hidden="true"><path d="M1 1.5h16M1 7h16M1 12.5h16" stroke="currentColor" stroke-width="0.9" fill="none"/></svg></h1>
+  <div class="body">
+    <div id="modeBox"><div style="margin-top:10px;color:var(--mute)">Click places</div><div class="seg" style="margin-top:4px" role="group" aria-label="Click mode">
+      <button id="mNode" class="on">Node</button>
+      <button id="mHub">Attractor</button>
+    </div></div>
+    <div id="sliders"></div>
+    <div class="btns">
+      <button id="bRewire">Rewire</button>
+      <button id="bScatter">Scatter rim</button>
+      <button id="bStraight">Straighten</button>
+      <button id="bClear">Clear added</button>
+      <button id="bPause" style="grid-column:1/-1">Pause</button>
+    </div>
+    <div id="stats"></div>
+  </div>
+</div>
+<div id="mbar"><div class="mseg" role="group" aria-label="Tap places"><button id="m2Node" class="on">Node</button><button id="m2Hub">Attractor</button></div><button id="mScatter">Scatter rim</button></div>
+<div id="hint">Click-drag: node · Shift-drag: attractor · Drag: move · Drag rim: resize · Right-click: delete · Space: pause</div>
+<script>
+{
+const S={ringN:36,edgeN:110,links:6,P:40,attract:1.0,stiff:1.2,compat:0.45,hubK:0.6,hubR:0.30,alpha:0.275,width:0.8,iters:6};
+const STEP=0.00018,SOFT=0.025,MAXD=0.004;
+const cvs=document.getElementById('c'),ctx=cvs.getContext('2d');
+let W=0,H=0,dpr=1,cx=0,cy=0,R=1;
+let structDirty=false,nodes=[],edges=[],hubs=[],compatDirty=true,compatPairs=0,paused=false,mode='node',t0=performance.now(),dragging=null,lastCompat=0;
+
+const rand=(a,b)=>a+Math.random()*(b-a);
+const dark=()=>false;
+
+function makePaper(){
+  // a small tiling sheet of off-white stock (grain, faint blotches, fibres), set as the page background
+  try{
+    const T=384,c=document.createElement('canvas');c.width=c.height=T;const g=c.getContext('2d');
+    g.fillStyle='#efeae0';g.fillRect(0,0,T,T);
+    const sm=document.createElement('canvas');sm.width=sm.height=8;const sg=sm.getContext('2d'),sd=sg.createImageData(8,8);
+    for(let i=0;i<sd.data.length;i+=4){const v=Math.random()*255;sd.data[i]=sd.data[i+1]=sd.data[i+2]=v;sd.data[i+3]=255}
+    sg.putImageData(sd,0,0);
+    const id=g.getImageData(0,0,T,T),d=id.data;
+    for(let i=0;i<d.length;i+=4){const n=(Math.random()-.5)*16;d[i]+=n;d[i+1]+=n;d[i+2]+=n*0.95}
+    g.putImageData(id,0,0);
+    g.strokeStyle='rgba(120,100,70,.07)';g.lineWidth=0.6;
+    for(let i=0;i<18;i++){const x=Math.random()*T,y=Math.random()*T,a=Math.random()*Math.PI,l=4+Math.random()*14;
+      g.beginPath();g.moveTo(x,y);g.quadraticCurveTo(x+Math.cos(a+.6)*l/2,y+Math.sin(a+.6)*l/2,x+Math.cos(a)*l,y+Math.sin(a)*l);g.stroke()}
+    const u=c.toDataURL();document.body.style.backgroundImage=`radial-gradient(ellipse at 50% 45%,transparent 55%,rgba(110,90,60,.09)),url(${u})`;document.documentElement.style.setProperty('--paper',`url(${u})`);
+  }catch(err){}
+}
+makePaper();
+function resize(){dpr=Math.min(2,devicePixelRatio||1);W=innerWidth;H=innerHeight;cvs.width=W*dpr;cvs.height=H*dpr;cx=W/2;cy=H/2;const pr=document.getElementById('panel').getBoundingClientRect(),off=!matchMedia('(max-width:760px),(max-height:500px)').matches&&!document.getElementById('panel').classList.contains('closed')?pr.right+8:0;cx=off+(W-off)/2;R=Math.min(W-off,H)*0.42;const hn=document.getElementById('hint');if(hn)hn.style.left=cx+'px'}
+addEventListener('resize',resize);resize();
+
+/* ---------- graph ---------- */
+function makeEdge(A,B){
+  const n=S.P+2,e={A,B,pts:new Float32Array(n*2),F:new Float32Array(n*2),born:performance.now(),cj:[],cw:[],cf:[]};
+  straight(e);return e;
+}
+function straight(e){const n=e.pts.length/2;for(let k=0;k<n;k++){const t=k/(n-1);e.pts[2*k]=e.A.x+(e.B.x-e.A.x)*t;e.pts[2*k+1]=e.A.y+(e.B.y-e.A.y)*t}}
+function hasEdge(A,B){return edges.some(e=>(e.A===A&&e.B===B)||(e.A===B&&e.B===A))}
+function randomAngles(N){
+  // random positions round the rim, sorted, with a small minimum gap so dots never sit on top of each other
+  const gap=0.35*Math.PI*2/N;let out=[];
+  for(let tries=0;tries<200;tries++){
+    out=Array.from({length:N},()=>Math.random()*Math.PI*2).sort((a,b)=>a-b);
+    let ok=true;for(let i=0;i<N;i++){const d=(out[(i+1)%N]-out[i]+Math.PI*2)%(Math.PI*2);if(d<gap){ok=false;break}}
+    if(ok)break;
+  }
+  return out;
+}
+function scatterRim(){
+  // eased move to new random positions; edges are carried along by their endpoints
+  const ring=nodes.filter(n=>n.ring),ang=randomAngles(ring.length);
+  const off=Math.random()*Math.PI*2;
+  ring.forEach((n,i)=>{n.a=Math.atan2(n.y,n.x);n.ta=ang[i]+off});
+}
+function buildRing(){
+  nodes=nodes.filter(n=>!n.ring);
+  const ring=[];
+  for(const a of randomAngles(S.ringN))ring.push({x:Math.cos(a),y:Math.sin(a),ring:true,a,ta:null});
+  nodes=ring.concat(nodes);
+  edges=edges.filter(e=>!e.A.ring||!e.B.ring).filter(e=>nodes.includes(e.A)&&nodes.includes(e.B));
+  // interior nodes lose links to old ring nodes, so relink them
+  for(const n of nodes)if(!n.ring&&!edges.some(e=>e.A===n||e.B===n))linkNode(n);
+  rewire();
+}
+function rewire(){
+  edges=edges.filter(e=>!(e.A.ring&&e.B.ring));
+  const ring=nodes.filter(n=>n.ring),N=ring.length,minGap=Math.max(2,Math.floor(N/8));
+  let tries=0;
+  while(edges.filter(e=>e.A.ring&&e.B.ring).length<S.edgeN&&tries++<S.edgeN*40){
+    const i=Math.floor(Math.random()*N),j=Math.floor(Math.random()*N);
+    const gap=Math.min(Math.abs(i-j),N-Math.abs(i-j));
+    if(gap<minGap||hasEdge(ring[i],ring[j]))continue;
+    edges.push(makeEdge(ring[i],ring[j]));
+  }
+  compatDirty=true;
+}
+function linkNode(n){
+  n.order=nodes.filter(m=>m.ring&&m!==n).sort(()=>Math.random()-.5);
+  if(!n.k)n.k=S.links;
+  setLinks(n,n.k);
+}
+function setLinks(n,k){
+  // a fixed shuffled order per node, so growing/shrinking adds/removes edges stably
+  k=Math.max(1,Math.min(k,n.order.length));n.k=k;
+  const want=new Set(n.order.slice(0,k));
+  edges=edges.filter(e=>!((e.A===n&&!want.has(e.B))||(e.B===n&&!want.has(e.A))));
+  for(const m of want)if(!hasEdge(n,m))edges.push(makeEdge(n,m));
+  compatDirty=true;structDirty=true;
+}
+function addNode(x,y){const n={x,y,ring:false};nodes.push(n);linkNode(n)}
+function removeNode(n){nodes=nodes.filter(m=>m!==n);edges=edges.filter(e=>e.A!==n&&e.B!==n);compatDirty=true}
+function resampleAll(){
+  const n=S.P+2;
+  for(const e of edges){
+    const o=e.pts,on=o.length/2,cum=[0];
+    for(let k=1;k<on;k++)cum.push(cum[k-1]+Math.hypot(o[2*k]-o[2*k-2],o[2*k+1]-o[2*k-1]));
+    const L=cum[on-1]||1,p=new Float32Array(n*2);let s=0;
+    for(let k=0;k<n;k++){
+      const d=k/(n-1)*L;while(s<on-2&&cum[s+1]<d)s++;
+      const seg=(cum[s+1]-cum[s])||1,t=Math.min(1,Math.max(0,(d-cum[s])/seg));
+      p[2*k]=o[2*s]+(o[2*s+2]-o[2*s])*t;p[2*k+1]=o[2*s+1]+(o[2*s+3]-o[2*s+1])*t;
+    }
+    e.pts=p;e.F=new Float32Array(n*2);
+  }
+  compatDirty=true;
+}
+
+/* ---------- compatibility (Holten & van Wijk FDEB) ---------- */
+function visibility(P,Q){
+  // project Q's endpoints onto the line through P
+  const px=P.bx-P.ax,py=P.by-P.ay,l2=px*px+py*py;if(l2<1e-9)return 0;
+  const t0=((Q.ax-P.ax)*px+(Q.ay-P.ay)*py)/l2,t1=((Q.bx-P.ax)*px+(Q.by-P.ay)*py)/l2;
+  const i0x=P.ax+px*t0,i0y=P.ay+py*t0,i1x=P.ax+px*t1,i1y=P.ay+py*t1;
+  const il=Math.hypot(i1x-i0x,i1y-i0y);if(il<1e-6)return 0;
+  const imx=(i0x+i1x)/2,imy=(i0y+i1y)/2;
+  return Math.max(0,1-2*Math.hypot(P.mx-imx,P.my-imy)/il);
+}
+function computeCompat(){
+  const g=edges.map(e=>{const ax=e.A.x,ay=e.A.y,bx=e.B.x,by=e.B.y;return{ax,ay,bx,by,dx:bx-ax,dy:by-ay,l:Math.hypot(bx-ax,by-ay),mx:(ax+bx)/2,my:(ay+by)/2}});
+  for(const e of edges){e.cj=[];e.cw=[];e.cf=[]}
+  compatPairs=0;
+  for(let i=0;i<edges.length;i++){const P=g[i];if(P.l<1e-4)continue;
+    for(let j=i+1;j<edges.length;j++){const Q=g[j];if(Q.l<1e-4)continue;
+      const dot=(P.dx*Q.dx+P.dy*Q.dy)/(P.l*Q.l),ca=Math.abs(dot);
+      const la=(P.l+Q.l)/2,cs=2/(la/Math.min(P.l,Q.l)+Math.max(P.l,Q.l)/la);
+      const cp=la/(la+Math.hypot(P.mx-Q.mx,P.my-Q.my));
+      let c=ca*cs*cp;if(c<S.compat)continue;
+      c*=Math.min(visibility(P,Q),visibility(Q,P));if(c<S.compat)continue;
+      const f=dot<0?1:0;
+      edges[i].cj.push(j);edges[i].cw.push(c);edges[i].cf.push(f);
+      edges[j].cj.push(i);edges[j].cw.push(c);edges[j].cf.push(f);
+      compatPairs++;
+    }}
+  compatDirty=false;structDirty=false;lastCompat=performance.now();
+}
+
+/* ---------- simulation ---------- */
+function step(){
+  const n=S.P+2,last=n-1,cmax=0.45/STEP;
+  // when an endpoint moves, carry the whole curve with it (blended along its length) so no knee forms
+  for(const e of edges){
+    const p=e.pts,ax=e.A.x-p[0],ay=e.A.y-p[1],bx=e.B.x-p[2*last],by=e.B.y-p[2*last+1];
+    if(ax||ay||bx||by)for(let k=0;k<=last;k++){const w=k/last;p[2*k]+=ax*(1-w)+bx*w;p[2*k+1]+=ay*(1-w)+by*w}
+  }
+  for(const e of edges){
+    const p=e.pts,F=e.F,h=Math.max(1e-4,Math.hypot(e.B.x-e.A.x,e.B.y-e.A.y)/(n-1));
+    const c=Math.min(S.stiff/(h*h),cmax);
+    for(let k=1;k<last;k++){
+      const x=p[2*k],y=p[2*k+1];
+      let fx=c*(p[2*k-2]+p[2*k+2]-2*x),fy=c*(p[2*k-1]+p[2*k+3]-2*y);
+      for(let m=0;m<e.cj.length;m++){
+        const q=edges[e.cj[m]].pts,kk=e.cf[m]?last-k:k;
+        const dx=q[2*kk]-x,dy=q[2*kk+1]-y,d=Math.sqrt(dx*dx+dy*dy);
+        const f=S.attract*e.cw[m]/(d+SOFT);fx+=dx*f;fy+=dy*f;
+      }
+      for(const hb of hubs){
+        const dx=hb.x-x,dy=hb.y-y,d=Math.sqrt(dx*dx+dy*dy);
+        if(d<hb.r){const u=1-d/hb.r,f=S.hubK*hb.s*20*u*u/(d+SOFT);fx+=dx*f;fy+=dy*f}
+      }
+      F[2*k]=fx;F[2*k+1]=fy;
+    }
+  }
+  for(const e of edges){
+    const p=e.pts,F=e.F;
+    for(let k=1;k<last;k++){
+      let mx=F[2*k]*STEP,my=F[2*k+1]*STEP;const m=Math.hypot(mx,my);
+      if(m>MAXD){mx*=MAXD/m;my*=MAXD/m}
+      let x=p[2*k]+mx,y=p[2*k+1]+my;const r=Math.hypot(x,y);
+      if(r>0.995){x*=0.995/r;y*=0.995/r}
+      p[2*k]=x;p[2*k+1]=y;
+    }
+  }
+}
+
+/* ---------- drawing ---------- */
+const X=u=>cx+u*R,Y=v=>cy+v*R;
+function edgeColour(e,dk){
+  const ang=Math.atan2(e.B.y-e.A.y,e.B.x-e.A.x);
+  const hue=((ang<0?ang+Math.PI:ang)/Math.PI*300+190)%360;
+  return '#23232b';
+}
+function draw(now){
+  const dk=dark();
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  // ring
+  ctx.strokeStyle='#23232b';ctx.globalAlpha=0.5;ctx.lineWidth=0.8;
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.stroke();ctx.globalAlpha=1;
+  // hubs
+  for(const hb of hubs){
+    if(hb.r*R<1)continue;ctx.setLineDash([4,4]);ctx.strokeStyle='#c8322a';ctx.lineWidth=0.8;ctx.globalAlpha=0.8;
+    ctx.beginPath();ctx.arc(X(hb.x),Y(hb.y),hb.r*R,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;
+  }
+  // edges: pen ink, overlaps darken like layered passes
+  ctx.globalCompositeOperation='multiply';
+  ctx.lineWidth=S.width;ctx.lineCap='round';
+  const n=S.P+2;
+  for(const e of edges){
+    const p=e.pts,age=(now-e.born)/700;
+    ctx.globalAlpha=Math.min(1,S.alpha*(1+Math.max(0,2-age*2)));
+    ctx.strokeStyle=edgeColour(e,dk);
+    ctx.beginPath();ctx.moveTo(X(p[0]),Y(p[1]));
+    for(let k=1;k<n-1;k++){
+      const mx=(p[2*k]+p[2*k+2])/2,my=(p[2*k+1]+p[2*k+3])/2;
+      ctx.quadraticCurveTo(X(p[2*k]),Y(p[2*k+1]),X(mx),Y(my));
+    }
+    ctx.lineTo(X(p[2*n-2]),Y(p[2*n-1]));ctx.stroke();
+  }
+  ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
+  // nodes
+  for(const nd of nodes){
+    ctx.strokeStyle='#23232b';ctx.lineWidth=0.9;ctx.fillStyle='#efeae0';
+    ctx.beginPath();ctx.arc(X(nd.x),Y(nd.y),nd.ring?2.6:4.5,0,Math.PI*2);ctx.fill();ctx.stroke();
+    if(!nd.ring){ctx.beginPath();ctx.arc(X(nd.x),Y(nd.y),1.4,0,Math.PI*2);ctx.fillStyle='#23232b';ctx.fill()}
+  }
+  if(dragging&&dragging.type==='newnode'&&dragging.d>0){
+    const o=dragging.o;ctx.setLineDash([4,4]);ctx.strokeStyle='#23232b';ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.arc(X(o.x),Y(o.y),dragging.d*R,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle='#23232b';ctx.font='12px Inter,system-ui,sans-serif';ctx.textAlign='left';
+    ctx.fillText(o.k+(o.k===1?' link':' links'),X(o.x)+dragging.d*R+6,Y(o.y)+4);
+  }
+  if(dragging&&dragging.type==='node'){
+    const o=dragging.o;ctx.setLineDash([3,3]);ctx.strokeStyle='#23232b';ctx.lineWidth=0.8;
+    ctx.beginPath();ctx.arc(X(o.x),Y(o.y),o.ring?9:13,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  }
+  for(const hb of hubs){const x=X(hb.x),y=Y(hb.y);ctx.strokeStyle='#c8322a';ctx.lineWidth=0.9;ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.moveTo(x-7,y);ctx.lineTo(x+7,y);ctx.moveTo(x,y-7);ctx.lineTo(x,y+7);ctx.stroke()}
+}
+
+/* ---------- loop ---------- */
+let frame=0;
+function loop(now){
+  for(const n of nodes)if(n.ring&&n.ta!=null){
+    let d=n.ta-n.a;d=Math.atan2(Math.sin(d),Math.cos(d));
+    if(Math.abs(d)<1e-3){n.a=n.ta;n.ta=null}else n.a+=d*0.08;
+    n.x=Math.cos(n.a);n.y=Math.sin(n.a);compatDirty=true;
+  }
+  for(const hb of hubs){
+    if(hb.rt!==null){hb.r+=(hb.rt-hb.r)*0.12;if(Math.abs(hb.rt-hb.r)<1e-3){hb.r=hb.rt;hb.rt=null}}
+    hb.s+=(1-hb.s)*0.05;
+  }
+  if(compatDirty&&(structDirty||!dragging||now-lastCompat>80))computeCompat();
+  if(!paused)for(let i=0;i<S.iters;i++)step();
+  draw(now);
+  if(++frame%15===0)document.getElementById('stats').textContent=`${nodes.length} nodes · ${edges.length} edges · ${compatPairs} compatible pairs`;
+  requestAnimationFrame(loop);
+}
+
+/* ---------- interaction ---------- */
+function toUnit(ev){return{x:(ev.clientX-cx)/R,y:(ev.clientY-cy)/R}}
+function hit(u){
+  const tol=12/R;
+  for(const hb of hubs)if(Math.hypot(hb.x-u.x,hb.y-u.y)<tol)return{type:'hub',o:hb};
+  for(const nd of nodes)if(Math.hypot(nd.x-u.x,nd.y-u.y)<tol)return{type:'node',o:nd};
+  for(const hb of hubs)if(Math.abs(Math.hypot(hb.x-u.x,hb.y-u.y)-hb.r)<tol)return{type:'rim',o:hb};
+  for(const nd of nodes)if(Math.hypot(nd.x-u.x,nd.y-u.y)<tol)return{type:'node',o:nd};
+  return null;
+}
+cvs.addEventListener('contextmenu',ev=>ev.preventDefault());
+cvs.addEventListener('pointerdown',ev=>{
+  // on narrow screens a tap outside the open menu just tucks it away
+  if(narrow()&&!panel.classList.contains('closed')){setPanel(false);return}
+  const u=toUnit(ev),h=hit(u),del=ev.button===2||ev.altKey;
+  if(h&&del){if(h.type==='hub'||h.type==='rim')hubs=hubs.filter(x=>x!==h.o);else removeNode(h.o);return}
+  if(del)return;
+  if(h){dragging=h;cvs.setPointerCapture(ev.pointerId);return}
+  if(Math.hypot(u.x,u.y)>0.97)return;
+  const m=ev.shiftKey?(mode==='node'?'hub':'node'):mode;
+  if(m==='node'){addNode(u.x,u.y);dragging={type:'newnode',o:nodes[nodes.length-1],d:0};cvs.setPointerCapture(ev.pointerId)}else{const hb={x:u.x,y:u.y,r:0,rt:null,s:0};hubs.push(hb);dragging={type:'new',o:hb};cvs.setPointerCapture(ev.pointerId)}
+});
+cvs.addEventListener('pointermove',ev=>{
+  const u=toUnit(ev);
+  if(!dragging){const hh=hit(u);cvs.style.cursor=hh?(hh.type==='rim'?'ew-resize':'grab'):'crosshair';return}
+  const o=dragging.o,r=Math.hypot(u.x,u.y)||1;
+  if(dragging.type==='newnode'){const d=Math.hypot(u.x-o.x,u.y-o.y);if(d>6/R){dragging.d=d;setLinks(o,Math.round(1+d*40))}return}
+  if(dragging.type==='new'){o.r=Math.min(1.5,Math.hypot(u.x-o.x,u.y-o.y));o.rt=null;return}
+  if(dragging.type==='rim'){o.rt=null;o.r=Math.max(MINR,Math.min(1.5,Math.hypot(u.x-o.x,u.y-o.y)));return}
+  if(dragging.type==='node'&&o.ring){o.ta=null;o.x=u.x/r;o.y=u.y/r;o.a=Math.atan2(o.y,o.x)}
+  else{const k=r>0.95?0.95/r:1;o.x=u.x*k;o.y=u.y*k}
+  if(dragging.type==='node')compatDirty=true;
+});
+const MINR=0.08;
+const endDrag=()=>{if(dragging){
+  // a plain click grows to the default radius; a too-small drag grows to the minimum, both eased
+  if(dragging.type==='new'){const o=dragging.o;if(o.r<6/R)o.rt=S.hubR;else if(o.r<MINR)o.rt=MINR}
+  dragging=null;compatDirty=true}};
+cvs.addEventListener('pointerup',endDrag);cvs.addEventListener('pointercancel',endDrag);
+
+addEventListener('keydown',ev=>{
+  if(ev.target.tagName==='INPUT')return;
+  if(ev.code==='Space'){ev.preventDefault();togglePause()}
+  if(ev.key==='s'||ev.key==='S')edges.forEach(straight);
+});
+
+/* ---------- controls ---------- */
+const defs=[
+  ['ringN','Rim nodes',8,96,1,()=>buildRing()],
+  ['edgeN','Rim edges',0,400,1,()=>rewire()],
+  ['links','Links per node',1,20,1,null],
+  ['attract','Bundling strength',0,3,0.01,null],
+  ['stiff','Edge stiffness',0,5,0.01,null],
+  ['compat','Compatibility',0.05,0.95,0.01,()=>compatDirty=true],
+  ['hubK','Attractor strength',0,5,0.01,null],
+  ['hubR','New attractor radius',0.05,0.8,0.01,null],
+  ['P','Subdivisions',8,80,1,()=>resampleAll()],
+  ['iters','Steps per frame',1,20,1,null],
+  ['alpha','Edge opacity',0.03,1,0.005,null],
+  ['width','Line width',0.3,4,0.05,null],
+];
+const box=document.getElementById('sliders');
+box.innerHTML=defs.map(([k,l,mn,mx,st])=>`<div class="row${k.startsWith('hub')?' red':''}"><label for="s_${k}">${l}</label><output id="o_${k}"></output><input type="range" id="s_${k}" min="${mn}" max="${mx}" step="${st}" value="${S[k]}"></div>`).join('')
+  .replace(/(id="s_compat"[^>]*>)<\/div>/,'$1</div><div class="sep"></div>')
+  .replace(/(id="s_hubR"[^>]*>)<\/div>/,'$1</div><div class="sep"></div>');
+const fmt=(v,st)=>st>=1?String(v):v.toFixed(2);
+for(const [k,,,,st,cb] of defs){
+  const el=document.getElementById('s_'+k),out=document.getElementById('o_'+k);
+  out.textContent=fmt(S[k],st);
+  el.addEventListener('input',()=>{S[k]=parseFloat(el.value);out.textContent=fmt(S[k],st);if(cb)cb()});
+}
+function setMode(m){mode=m;for(const id of ['mNode','m2Node'])document.getElementById(id).classList.toggle('on',m==='node');for(const id of ['mHub','m2Hub'])document.getElementById(id).classList.toggle('on',m==='hub')}
+document.getElementById('m2Node').onclick=()=>setMode('node');
+document.getElementById('m2Hub').onclick=()=>setMode('hub');
+document.getElementById('mNode').onclick=()=>setMode('node');
+document.getElementById('mHub').onclick=()=>setMode('hub');
+function togglePause(){paused=!paused;document.getElementById('bPause').textContent=paused?'Play':'Pause'}
+document.getElementById('bPause').onclick=togglePause;
+document.getElementById('bRewire').onclick=()=>{rewire()};
+document.getElementById('bScatter').onclick=scatterRim;
+document.getElementById('bStraight').onclick=()=>edges.forEach(straight);
+document.getElementById('bClear').onclick=()=>{nodes=nodes.filter(n=>n.ring);hubs=[];edges=edges.filter(e=>e.A.ring&&e.B.ring);compatDirty=true};
+const panel=document.getElementById('panel');
+function narrow(){return matchMedia('(max-width:760px),(max-height:500px)').matches}
+function setPanel(open){panel.classList.toggle('closed',!open);document.getElementById('ptog').textContent=open?'–':'+';resize()}
+document.getElementById('ptitle').onclick=()=>setPanel(panel.classList.contains('closed'));
+document.getElementById('mScatter').onclick=scatterRim;
+if(narrow())setPanel(false);
+
+buildRing();
+requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
