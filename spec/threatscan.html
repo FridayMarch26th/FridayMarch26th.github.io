@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ThreatScan Perimeter Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* One visual world: a dark security console. 1920x1080 frame letterboxed into the window. */
+  --bg: #000000;
+  --frame: #050505;
+  --ink: #d8d8d8;
+  --muted: #7a7a7a;
+  --red: #ff2a1a;
+  --red-dim: #3a0905;
+  --font: "B612 Mono", "Consolas", "Menlo", monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font); overflow: hidden; }
+#stage { position: absolute; inset: 0; display: grid; place-items: center; }
+canvas#view { display: block; background: var(--frame); box-shadow: 0 0 0 1px #111; image-rendering: auto; }
+#controls {
+  position: fixed; left: 16px; bottom: 12px; display: flex; gap: 8px; align-items: center;
+  font-size: 12px; letter-spacing: 0.08em; opacity: 0; transition: opacity 0.4s;
+  padding: 8px 10px; background: rgba(0,0,0,0.85); border: 1px solid #1c1c1c;
+}
+#controls.show, #controls:hover, #controls:focus-within { opacity: 1; }
+#controls button {
+  font: inherit; color: var(--ink); background: #0d0d0d; border: 1px solid #2a2a2a;
+  padding: 5px 10px; cursor: pointer; text-transform: uppercase;
+}
+#controls button[aria-pressed="true"] { border-color: var(--red); color: #fff; background: var(--red-dim); }
+#controls button:focus-visible, #controls input:focus-visible { outline: 1px solid var(--red); outline-offset: 2px; }
+#controls input[type="range"] { width: 220px; accent-color: var(--red); }
+#controls output { color: var(--muted); min-width: 6ch; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="view" aria-label="Animated perimeter radar: an operator's cursor scans contacts closing on HQ and opens an information panel on each"></canvas></div>
+<div id="controls">
+  <button id="btn-play" type="button" aria-pressed="false">Pause</button>
+  <button id="btn-fx" type="button" aria-pressed="true">Lens FX</button>
+  <label for="scrub" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">Loop time</label>
+  <input id="scrub" type="range" min="0" max="20" step="0.04" value="0">
+  <output id="clock-out" for="scrub">00.00s</output>
+  <output id="fps-out">-- fps</output>
+</div>
+<script>
+(function () {
+  "use strict";
+  // ------------------------------------------------------------------ constants
+  var W = 1920, H = 1080, LOOP = 20.0;
+  var G = { cx: 960.0, cy: 1000.0, R: 880.0, half: 52.0, ring: 110.0 };
+  var R0 = 870.0, R1 = 190.0, DW = 2.4, TR = 0.8, STEP = DW + TR, NV = 6;
+  var MW = 330.0, MH = 178.0, HB = 26.0;
+  var C = {
+    bg: "#050505", sector: "#111111", grid: "#1c1c1c", line: "#2a2a2a", major: "#3a3a3a", edge: "#444444",
+    text: "#8a8a8a", bright: "#dadada", red: "#e8241a", hot: "#ff4a32", redText: "#ff3a28",
+    redDim: "#3d0a06", tab: "#b3180c", ink: "#070707", panel: "rgba(14,14,14,0.94)"
+  };
+  var FONT = '"B612 Mono", Consolas, Menlo, monospace';
+
+  var T = [
+    { id: "T-02", th: -12, r: 430, mv: false, cls: "GROUND VEH / PARKED", spd: 0, lvl: 2 },
+    { id: "T-05", th: 22, r: 760, mv: false, cls: "RF EMITTER / FIXED", spd: 0, lvl: 3 },
+    { id: "T-06", th: 41, r: 360, mv: false, cls: "THERMAL / UNKNOWN", spd: 0, lvl: 1 },
+    { id: "T-08", th: -38, r: 640, mv: false, cls: "OBSERVATION POST", spd: 0, lvl: 2 },
+    { id: "T-09", th: 6, r: 830, mv: false, cls: "GROUND VEH / IDLE", spd: 0, lvl: 1 },
+    { id: "T-03", th: -25, mv: true, T: 20, ph: 0.15, cls: "UAV / ROTARY", spd: 38, lvl: 4 },
+    { id: "T-04", th: 33, mv: true, T: 20, ph: 0.55, cls: "GROUND VEH / FAST", spd: 24, lvl: 4 },
+    { id: "T-07", th: -4, mv: true, T: 20, ph: 0.85, cls: "INFANTRY / SQUAD", spd: 3, lvl: 3 },
+    { id: "T-10", th: 16, mv: true, T: 10, ph: 0.4, cls: "UAV / FIXED-WING", spd: 61, lvl: 5 }
+  ];
+  var WORDS = ["", "LOW", "GUARDED", "ELEVATED", "HIGH", "CRITICAL"];
+
+  // ------------------------------------------------------------------ maths
+  function frac(x) { return x - Math.floor(x); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function lerp(a, b, u) { return a + (b - a) * u; }
+  function pad0(n, w) { var s = String(n); while (s.length < w) s = "0" + s; return s; }
+  function padL(s, w) { s = String(s); while (s.length < w) s = " " + s; return s; }
+  function polar(th, r) { var a = th * Math.PI / 180.0; return [G.cx + r * Math.sin(a), G.cy - r * Math.cos(a)]; }
+  function uAt(t, o) { return frac(t / o.T + o.ph); }
+  function rAt(t, o) { return o.mv ? R0 - (R0 - R1) * uAt(t, o) : o.r; }
+  function opAt(t, o) { if (!o.mv) return 1.0; var u = uAt(t, o); if (u < 0.08) return u / 0.08; if (u > 0.9) return (1.0 - u) / 0.1; return 1.0; }
+  function posAt(t, o) { return polar(o.th, rAt(t, o)); }
+  function visible(t0, t1, o) { for (var t = t0; t <= t1 + 0.001; t += 0.1) if (opAt(t, o) < 0.99) return false; return true; }
+  function byId(id) { for (var i = 0; i < T.length; i++) if (T[i].id === id) return T[i]; return null; }
+  // smooth ease, close to AE's 80% influence ease
+  function ease(u) { u = clamp(u, 0.0, 1.0); return u < 0.5 ? 16.0 * u * u * u * u * u : 1.0 - Math.pow(-2.0 * u + 2.0, 5.0) / 2.0; }
+  function hash(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
+
+  // ------------------------------------------------------------------ visit plan (same rule as the AE build)
+  var V = [{ o: byId("T-02"), t: 0.0 }];
+  (function () {
+    var used = { "T-02": true }, prev = posAt(0.0, byId("T-02"));
+    for (var i = 1; i < NV; i++) {
+      var ta = i * STEP, best = null, bd = 1e9, wantMv = (i % 2 === 1);
+      for (var pass = 0; pass < 2 && !best; pass++) {
+        for (var j = 0; j < T.length; j++) {
+          var o = T[j];
+          if (used[o.id]) continue;
+          if (pass === 0 && o.mv !== wantMv) continue;
+          if (o.mv && !visible(ta - 0.4, ta + DW, o)) continue;
+          var p = posAt(ta, o), d = Math.hypot(p[0] - prev[0], p[1] - prev[1]);
+          if (d < bd) { bd = d; best = o; }
+        }
+      }
+      used[best.id] = true; V.push({ o: best, t: ta }); prev = posAt(ta + DW, best);
+    }
+    // modal placement from the target's whole path during the dwell
+    for (var k = 0; k < V.length; k++) {
+      var v = V[k], xs = [], ys = [];
+      for (var t = v.t; t <= v.t + DW + 0.001; t += 0.1) { var q = posAt(t, v.o); xs.push(q[0]); ys.push(q[1]); }
+      var minx = Math.min.apply(null, xs), maxx = Math.max.apply(null, xs), miny = Math.min.apply(null, ys), maxy = Math.max.apply(null, ys);
+      v.right = ((minx + maxx) / 2.0) < G.cx;
+      v.mx = clamp(v.right ? maxx + 56.0 : minx - 56.0 - MW, 16.0, 1904.0 - MW);
+      v.my = clamp((miny + maxy) / 2.0 - MH / 2.0 - 40.0, 72.0, 1028.0 - MH);
+    }
+  })();
+  var sortedIds = T.slice().sort(function (a, b) { return a.id < b.id ? -1 : 1; });
+
+  function visitIndex(t) { var idx = 0; for (var i = 0; i < V.length; i++) if (t >= V[i].t) idx = i; return idx; }
+
+  function cursorAt(t) {
+    var i = visitIndex(t), v = V[i], dt = t - v.t;
+    if (dt <= DW) return posAt(t, v.o);
+    var nxt = (i + 1 < V.length) ? V[i + 1] : { o: V[0].o, t: LOOP };
+    var a = posAt(v.t + DW, v.o), b = posAt(nxt.t, nxt.o), u = ease((dt - DW) / TR);
+    return [lerp(a[0], b[0], u), lerp(a[1], b[1], u)];
+  }
+  function cursorScale(t) {
+    var i = visitIndex(t), dt = t - V[i].t;
+    if (dt < 0.25) return lerp(1.35, 1.0, ease(dt / 0.25));
+    if (dt <= DW) return 1.0;
+    if (dt < DW + 0.25) return lerp(1.0, 1.35, ease((dt - DW) / 0.25));
+    return 1.35;
+  }
+  function modalOpen(dt) {
+    if (dt < 0.2) return 0.0;
+    if (dt < 0.4) return (dt - 0.2) / 0.2;
+    if (dt < 2.2) return 1.0;
+    if (dt < 2.38) return 1.0 - (dt - 2.2) / 0.18;
+    return 0.0;
+  }
+  function leaderOp(dt) {
+    if (dt < 0.3) return 0.0;
+    if (dt < 0.42) return (dt - 0.3) / 0.12;
+    if (dt < 2.18) return 1.0;
+    if (dt < 2.26) return 1.0 - (dt - 2.18) / 0.08;
+    return 0.0;
+  }
+  function mmss(s) { s = Math.max(0, Math.round(s)); return pad0(Math.floor(s / 60), 2) + ":" + pad0(s % 60, 2); }
+  function brg(th) { return pad0(Math.round((360 + th) % 360), 3) + "°"; }
+
+  // ------------------------------------------------------------------ canvas setup
+  // The view renders at a fixed 1920x1080 and the browser scales it to the window:
+  // full-screen on a 4K display costs the same as a 1080p window.
+  var view = document.getElementById("view");
+  view.width = W; view.height = H;
+  var ctx = view.getContext("2d", { alpha: false });
+  function makeCanvas(w, h) { var c = document.createElement("canvas"); c.width = w; c.height = h; return c; }
+
+  function fit() {
+    var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+    view.style.width = Math.floor(W * s) + "px"; view.style.height = Math.floor(H * s) + "px";
+  }
+  window.addEventListener("resize", fit);
+  fit();
+
+  function font(size, bold) { ctx.font = (bold ? "700 " : "400 ") + size + "px " + FONT; }
+  function text(str, x, y, size, col, align, bold, track) {
+    font(size, bold === undefined ? size >= 13 : bold);
+    ctx.fillStyle = col; ctx.textAlign = align || "left"; ctx.textBaseline = "alphabetic";
+    if ("letterSpacing" in ctx) ctx.letterSpacing = (track || 0) + "px";
+    ctx.fillText(str, x, y);
+    if ("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+  }
+  function lines(arr, x, y, lead, size, col, align) { for (var i = 0; i < arr.length; i++) text(arr[i], x, y + i * lead, size, col, align); }
+  function rect(cx, cy, w, h, col) { ctx.fillStyle = col; ctx.fillRect(cx - w / 2.0, cy - h / 2.0, w, h); }
+  // Real shadow-blur glow: only ever used while baking layers and sprites, never per frame.
+  function glow(on, blur) { ctx.shadowColor = on ? C.hot : "transparent"; ctx.shadowBlur = on ? (blur || 10.0) : 0.0; }
+  // Cheap per-frame glow: a soft halo rect behind a hot fill.
+  function hotRect(cx, cy, w, h) { ctx.fillStyle = "rgba(255,74,50,0.22)"; ctx.fillRect(cx - w / 2.0 - 3.0, cy - h / 2.0 - 3.0, w + 6.0, h + 6.0); rect(cx, cy, w, h, C.hot); }
+  var A0 = (-90.0 - G.half) * Math.PI / 180.0, A1 = (-90.0 + G.half) * Math.PI / 180.0;
+  function arc(r, col, w, dash) {
+    ctx.beginPath(); ctx.arc(G.cx, G.cy, r, A0, A1); ctx.strokeStyle = col; ctx.lineWidth = w;
+    ctx.setLineDash(dash || []); ctx.stroke(); ctx.setLineDash([]);
+  }
+  function radial(th, r0, r1, col, w) { var a = polar(th, r0), b = polar(th, r1); ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.strokeStyle = col; ctx.lineWidth = w; ctx.stroke(); }
+  function withCtx(c, fn) { var keep = ctx; ctx = c.getContext("2d"); try { fn(); } finally { ctx = keep; } }
+
+  // ------------------------------------------------------------------ static layer (drawn once)
+  var staticC = makeCanvas(W, H);
+  function drawStatic() {
+    withCtx(staticC, function () {
+      ctx.fillStyle = C.bg; ctx.fillRect(0, 0, W, H);
+      ctx.beginPath(); ctx.moveTo(G.cx, G.cy); ctx.arc(G.cx, G.cy, G.R, A0, A1); ctx.closePath(); ctx.fillStyle = C.sector; ctx.fill();
+      var k, a, i;
+      for (a = -50; a <= 50; a += 10) radial(a, 70.0, G.R, C.grid, 1.0);
+      for (k = 1; k <= 8; k++) arc(k * G.ring, (k % 4 === 0) ? C.major : C.line, (k % 4 === 0) ? 1.5 : 1.0);
+      for (k = 1; k <= 8; k++) arc((k - 0.5) * G.ring, C.grid, 1.0, [2, 10]);
+      radial(-G.half, 60.0, G.R + 14.0, C.edge, 1.5); radial(G.half, 60.0, G.R + 14.0, C.edge, 1.5);
+      for (a = -G.half; a <= G.half + 0.01; a += 2) radial(a, G.R + 2.5, G.R + 9.5, C.line, 1.0);
+      for (a = -50; a <= 50; a += 10) radial(a, G.R + 2.0, G.R + 16.0, C.text, 2.0);
+      for (a = -50; a <= 50; a += 10) { var p = polar(a, G.R + 34.0); text(pad0((360 + a) % 360, 3), p[0], p[1] + 5, 12, C.text, "center", false, 1); }
+      for (k = 1; k <= 8; k++) { var q = polar(G.half + 2.2, k * G.ring); text(k + " KM", q[0] + 4, q[1] + 4, 11, (k % 4 === 0) ? C.bright : C.text, "left", false, 1); }
+      // static contacts
+      for (i = 0; i < T.length; i++) {
+        var o = T[i]; if (o.mv) continue;
+        var sp = posAt(0, o);
+        ctx.save(); ctx.translate(sp[0], sp[1]); ctx.rotate(Math.PI / 4.0);
+        ctx.strokeStyle = C.red; ctx.lineWidth = 1.5; ctx.strokeRect(-6.5, -6.5, 13.0, 13.0);
+        ctx.fillStyle = C.red; ctx.fillRect(-1.5, -1.5, 3.0, 3.0);
+        ctx.restore();
+        text(o.id, sp[0] + 14, sp[1] - 10, 11, C.text, "left", false, 1);
+      }
+      // HQ
+      arc(70.0, C.text, 1.0);
+      ctx.beginPath(); ctx.arc(G.cx, G.cy, 38.0, Math.PI, 2.0 * Math.PI); ctx.closePath(); ctx.fillStyle = "#0f0f0f"; ctx.fill(); ctx.strokeStyle = C.red; ctx.lineWidth = 2.0; ctx.stroke();
+      glow(true, 12.0); rect(G.cx, G.cy - 12.0, 10.0, 10.0, C.hot); glow(false);
+      rect(G.cx + 128.0, G.cy - 14.0, 150.0, 22.0, C.tab);
+      text("HQ // NODE_01", G.cx + 128.0, G.cy - 9.0, 13, C.ink, "center", true, 1);
+      // header + footer bars
+      ctx.fillStyle = "#0b0b0b"; ctx.fillRect(0, 0, W, 56); ctx.fillRect(0, 1036, W, 44);
+      rect(W / 2.0, 56.5, W, 1.0, C.line); rect(W / 2.0, 1035.5, W, 1.0, C.line);
+      for (k = 1; k <= 4; k++) rect(330.0 * k, 1058.0, 1.0, 20.0, C.line);
+      glow(true, 8.0); rect(26, 28, 5, 26, C.hot); glow(false);
+      text("AEGIS // PERIMETER_WATCH", 44, 36, 20, C.bright, "left", true, 2);
+      text("SECTOR_NORTH : ARC_104° : RANGE_8KM", 520, 35, 13, C.text, "left", true, 1);
+      text("CONTACTS_09  //  HOSTILE_04", 24, 1063, 13, C.text, "left", true, 1);
+      text("OPERATOR: K.VANCE  //  CONSOLE_3", 1896, 1063, 13, C.text, "right", true, 1);
+      text("LIVE", 1618, 35, 13, C.redText, "left", true, 2);
+      // side panel frames
+      rect(40 + 75, 640 - 30, 150, 22, C.tab); text("CONTACTS", 40 + 75, 640 - 25, 13, C.ink, "center", true, 2);
+      for (k = 0; k < 9; k++) rect(40 + 150, 640 + 10 + k * 32, 300, 1, C.grid);
+      rect(1880 - 85, 640 - 30, 170, 22, C.tab); text("SENSOR_ARRAY", 1880 - 85, 640 - 25, 13, C.ink, "center", true, 2);
+      for (k = 0; k < 7; k++) rect(1880 - 140, 640 + 10 + k * 32, 280, 1, C.grid);
+    });
+  }
+
+  // ------------------------------------------------------------------ sprites (glow baked once)
+  var chevronS = makeCanvas(64, 64);
+  function drawSprites() {
+    withCtx(chevronS, function () {
+      ctx.translate(32, 32); glow(true, 10.0);
+      ctx.beginPath(); ctx.moveTo(0, -9); ctx.lineTo(8, 7); ctx.lineTo(0, 3); ctx.lineTo(-8, 7); ctx.closePath(); ctx.fillStyle = C.hot; ctx.fill();
+      glow(false);
+    });
+  }
+
+  // ------------------------------------------------------------------ slow layer: changes at most twice a second
+  // Static art + contact list, sensor readouts, clock, LIVE dot and footer tracking line,
+  // with the lens effects (edge defocus, colour fringe) baked in when it is rebuilt.
+  var slowRaw = makeCanvas(W, H), slowFx = makeCanvas(W, H), slowKey = null;
+  var lensSmall = makeCanvas(640, 360), lensTmp = makeCanvas(W, H), lensChan = makeCanvas(W, H), edgeMask = null;
+
+  function drawSlow(t) {
+    var i, step = Math.floor(t / 0.5), tq = step * 0.5;
+    ctx.drawImage(staticC, 0, 0);
+    var idx = 0, cur = V[visitIndex(t)].o.id;
+    for (i = 0; i < sortedIds.length; i++) if (sortedIds[i].id === cur) idx = i;
+    rect(40 + 150, 640 - 6 + idx * 32, 300, 26, C.redDim); rect(40 + 1.5, 640 - 6 + idx * 32, 3, 26, C.hot);
+    for (i = 0; i < sortedIds.length; i++) {
+      var o = sortedIds[i], r = rAt(tq, o) / G.ring, shown = opAt(tq, o) > 0.05;
+      var row = o.id + "   " + padL(shown ? r.toFixed(1) + "KM" : "--.-KM", 6) + "   " + (o.mv ? (shown ? "INBOUND" : "LOST   ") : "STATIC ") + "  L" + o.lvl;
+      text(row, 52, 640 + i * 32, 12, (i === idx) ? C.bright : C.text, "left", false, 0.5);
+    }
+    var noise = (-92.4 + (hash(step) - 0.5) * 1.6).toFixed(1);
+    var up = (hash(step + 999) > 0.5 ? "TX" : "RX") + " " + (410 + Math.round(hash(step + 77) * 30.0)) + " kbps";
+    lines(["RADAR      ONLINE", "THERMAL    ONLINE", "RF_SCAN    ACTIVE", "SWEEP      6.0 RPM", "NOISE      " + noise + " dB", "LINK       AES_256", "UPLINK     " + up],
+      1880 - 268, 640, 32, 12, C.text, "left");
+    if (step % 2 === 0) { glow(true, 8.0); ctx.beginPath(); ctx.arc(1606, 28, 4.5, 0, Math.PI * 2.0); ctx.fillStyle = C.hot; ctx.fill(); glow(false); }
+    else { ctx.beginPath(); ctx.arc(1606, 28, 4.5, 0, Math.PI * 2.0); ctx.fillStyle = "rgba(255,74,50,0.15)"; ctx.fill(); }
+    text("02:17:" + pad0(31 + Math.floor(t), 2) + " UTC", 1880, 36, 20, C.bright, "right", true, 1);
+    var v = V[visitIndex(t)].o;
+    text("TRACKING  " + v.id + "  //  " + v.cls, 350, 1063, 13, C.redText, "left", true, 1);
+  }
+  function buildEdgeMask() {
+    var m = makeCanvas(W, H), g = m.getContext("2d");
+    g.save(); g.translate(960, 540); g.scale(1.0, 560.0 / 980.0);
+    var grad = g.createRadialGradient(0, 0, 760, 0, 0, 1180);
+    grad.addColorStop(0.0, "rgba(0,0,0,0)"); grad.addColorStop(1.0, "rgba(0,0,0,1)");
+    g.fillStyle = grad; g.fillRect(-2000, -2000, 4000, 4000); g.restore();
+    return m;
+  }
+  // Lens: blur by down-and-up sampling (no CSS filter, works everywhere), kept only towards
+  // the edges; then the red channel is scaled out from the centre for a radial colour fringe.
+  function applyLens(src, dst) {
+    if (!edgeMask) edgeMask = buildEdgeMask();
+    var d = dst.getContext("2d"), s = lensSmall.getContext("2d"), tm = lensTmp.getContext("2d"), ch = lensChan.getContext("2d");
+    d.globalCompositeOperation = "source-over"; d.drawImage(src, 0, 0);
+    s.imageSmoothingQuality = "high"; s.clearRect(0, 0, 640, 360); s.drawImage(src, 0, 0, 640, 360);
+    tm.globalCompositeOperation = "source-over"; tm.clearRect(0, 0, W, H); tm.imageSmoothingQuality = "high"; tm.drawImage(lensSmall, 0, 0, W, H);
+    tm.globalCompositeOperation = "destination-in"; tm.drawImage(edgeMask, 0, 0); tm.globalCompositeOperation = "source-over";
+    d.drawImage(lensTmp, 0, 0);
+    ch.globalCompositeOperation = "source-over"; ch.drawImage(dst, 0, 0);
+    ch.globalCompositeOperation = "multiply"; ch.fillStyle = "#ff0000"; ch.fillRect(0, 0, W, H); ch.globalCompositeOperation = "source-over";
+    d.globalCompositeOperation = "multiply"; d.fillStyle = "#00ffff"; d.fillRect(0, 0, W, H);
+    d.globalCompositeOperation = "lighter";
+    var k = 1.0025; d.drawImage(lensChan, (W - W * k) / 2.0, (H - H * k) / 2.0, W * k, H * k);
+    d.globalCompositeOperation = "source-over";
+  }
+  function slowLayer(t, fx) {
+    var key = Math.floor(t / 0.5) + ":" + visitIndex(t) + ":" + (fx ? 1 : 0);
+    if (key !== slowKey) {
+      slowKey = key;
+      withCtx(slowRaw, function () { drawSlow(t); });
+      if (fx) applyLens(slowRaw, slowFx);
+    }
+    return fx ? slowFx : slowRaw;
+  }
+
+  // ------------------------------------------------------------------ fast layer: drawn every frame, kept light
+  function drawSweep(t) {
+    var ang = -G.half * Math.cos(Math.PI * t / 10.0);
+    var s0 = (-90.0 + ang - 6.0) * Math.PI / 180.0, e0 = (-90.0 + ang + 6.0) * Math.PI / 180.0;
+    var s1 = (-90.0 + ang - 2.5) * Math.PI / 180.0, e1 = (-90.0 + ang + 2.5) * Math.PI / 180.0;
+    var lo = Math.max(s0, A0), hi = Math.min(e0, A1);
+    if (hi > lo) { ctx.beginPath(); ctx.moveTo(G.cx, G.cy); ctx.arc(G.cx, G.cy, G.R, lo, hi); ctx.closePath(); ctx.fillStyle = "rgba(232,36,26,0.05)"; ctx.fill(); }
+    lo = Math.max(s1, A0); hi = Math.min(e1, A1);
+    if (hi > lo) { ctx.beginPath(); ctx.moveTo(G.cx, G.cy); ctx.arc(G.cx, G.cy, G.R, lo, hi); ctx.closePath(); ctx.fillStyle = "rgba(232,36,26,0.08)"; ctx.fill(); }
+    ctx.globalAlpha = 0.7; radial(ang, 60.0, G.R, C.red, 1.5); ctx.globalAlpha = 1.0;
+  }
+  function drawPulse(t) {
+    var u = frac(t / 4.0) * 4.0;
+    if (u < 3.2) { ctx.globalAlpha = 0.7 * (1.0 - u / 3.2); arc(lerp(30.0, 300.0, u / 3.2), C.red, 1.5); ctx.globalAlpha = 1.0; }
+  }
+  function drawMovers(t) {
+    ctx.lineWidth = 1.5;
+    for (var i = 0; i < T.length; i++) {
+      var o = T[i];
+      if (!o.mv) continue;
+      var a = opAt(t, o);
+      if (a <= 0.001) continue;
+      var p = posAt(t, o), rot = (o.th + 180.0) * Math.PI / 180.0;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(p[0], p[1]); ctx.rotate(rot);
+      ctx.setLineDash([3, 4]); ctx.strokeStyle = "rgba(232,36,26,0.45)"; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(0, 8); ctx.lineTo(0, 58); ctx.stroke(); ctx.setLineDash([]);
+      ctx.strokeStyle = "rgba(232,36,26,0.35)"; ctx.lineWidth = 1.0; ctx.beginPath(); ctx.arc(0, 0, 15, 0, Math.PI * 2.0); ctx.stroke();
+      ctx.drawImage(chevronS, -32, -32);
+      ctx.restore();
+      ctx.globalAlpha = a; text(o.id, p[0] + 16, p[1] - 14, 11, C.redText, "left", false, 1); ctx.globalAlpha = 1.0;
+    }
+  }
+  function bracketPath(s, L) {
+    ctx.beginPath();
+    ctx.moveTo(-s, -s + L); ctx.lineTo(-s, -s); ctx.lineTo(-s + L, -s);
+    ctx.moveTo(s - L, -s); ctx.lineTo(s, -s); ctx.lineTo(s, -s + L);
+    ctx.moveTo(s, s - L); ctx.lineTo(s, s); ctx.lineTo(s - L, s);
+    ctx.moveTo(-s + L, s); ctx.lineTo(-s, s); ctx.lineTo(-s, s - L);
+  }
+  function drawCursor(t) {
+    var c = cursorAt(t), sc = cursorScale(t), s = 28.0 * sc, L = 11.0 * sc;
+    ctx.save(); ctx.translate(c[0], c[1]);
+    ctx.strokeStyle = "rgba(232,36,26,0.25)"; ctx.lineWidth = 1.0; ctx.strokeRect(-28, -28, 56, 56);
+    ctx.strokeStyle = "rgba(232,36,26,0.7)"; ctx.beginPath();
+    ctx.moveTo(-36, 0); ctx.lineTo(-24, 0); ctx.moveTo(24, 0); ctx.lineTo(36, 0);
+    ctx.moveTo(0, -36); ctx.lineTo(0, -24); ctx.moveTo(0, 24); ctx.lineTo(0, 36); ctx.stroke();
+    bracketPath(s, L); ctx.strokeStyle = "rgba(255,74,50,0.18)"; ctx.lineWidth = 7.0; ctx.stroke();
+    bracketPath(s, L); ctx.strokeStyle = C.hot; ctx.lineWidth = 2.0; ctx.stroke();
+    ctx.restore();
+  }
+  function bodyLines(t, o) {
+    var r = rAt(t, o) / G.ring;
+    return [
+      "CLASS     " + o.cls,
+      "BEARING   " + brg(o.th),
+      "RANGE     " + r.toFixed(2) + " KM",
+      "VELOCITY  " + (o.mv ? (o.spd + " m/s  INBOUND") : "0 m/s  STATIC"),
+      "ETA_HQ    " + (o.mv ? mmss(r * 1000.0 / o.spd) : "--:--"),
+      "THREAT"
+    ];
+  }
+  function drawModal(t) {
+    var i = visitIndex(t), v = V[i], dt = t - v.t, o = v.o;
+    var op = modalOpen(dt), lo = leaderOp(dt);
+    if (lo > 0.0) {
+      var c = cursorAt(t), ex = v.right ? v.mx : v.mx + MW, ey = v.my + HB / 2.0, elx = v.right ? ex - 18.0 : ex + 18.0;
+      var sx = v.right ? c[0] + 34.0 : c[0] - 34.0;
+      ctx.globalAlpha = 0.85 * lo; ctx.strokeStyle = C.red; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(sx, c[1]); ctx.lineTo(elx, ey); ctx.lineTo(ex, ey); ctx.stroke(); ctx.globalAlpha = 1.0;
+    }
+    if (op <= 0.0) return;
+    var tq = o.mv ? v.t + Math.floor(dt / 0.4) * 0.4 : v.t;
+    ctx.save(); ctx.translate(v.mx, v.my); ctx.scale(1.0, op);
+    ctx.fillStyle = C.panel; ctx.fillRect(0, 0, MW, MH);
+    ctx.strokeStyle = C.red; ctx.lineWidth = 1.0; ctx.strokeRect(0.5, 0.5, MW - 1.0, MH - 1.0);
+    ctx.fillStyle = C.tab; ctx.fillRect(0, 0, MW, HB);
+    for (var k = 0; k < 5; k++) rect(MW / 2.0, 62.0 + 22.0 * k, MW - 24.0, 1.0, C.grid);
+    text("THREAT // " + o.id, 12, HB - 8, 13, C.ink, "left", true, 2);
+    text("LVL_" + o.lvl, MW - 12, HB - 8, 13, C.ink, "right", true, 2);
+    lines(bodyLines(tq, o), 14, HB + 28, 22, 12, C.bright, "left");
+    ctx.strokeStyle = "rgba(232,36,26,0.6)"; ctx.lineWidth = 1.0;
+    for (k = 0; k < 5; k++) {
+      var cx = 130.0 + 26.0 * k;
+      if (k < o.lvl) hotRect(cx, 159.0, 20.0, 10.0);
+      else ctx.strokeRect(cx - 10.0 + 0.5, 154.0 + 0.5, 19.0, 9.0);
+    }
+    text(WORDS[o.lvl], MW - 14, 164, 11, C.redText, "right", false, 2);
+    hotRect(MW - 6.0, MH - 6.0, 6.0, 6.0);
+    ctx.restore();
+  }
+
+  function render(t, fx) {
+    ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = 1.0;
+    ctx.drawImage(slowLayer(t, fx), 0, 0);
+    drawSweep(t);
+    drawPulse(t);
+    drawMovers(t);
+    drawCursor(t);
+    drawModal(t);
+  }
+
+  // ------------------------------------------------------------------ playback
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var playing = !reduce, fx = true, t = reduce ? 4.6 : 0.0, last = null, dirty = true;
+  var btnPlay = document.getElementById("btn-play"), btnFx = document.getElementById("btn-fx");
+  var scrub = document.getElementById("scrub"), outT = document.getElementById("clock-out"), outFps = document.getElementById("fps-out");
+  function syncUI() {
+    btnPlay.textContent = playing ? "Pause" : "Play"; btnPlay.setAttribute("aria-pressed", playing ? "false" : "true");
+    btnFx.setAttribute("aria-pressed", fx ? "true" : "false");
+  }
+  btnPlay.addEventListener("click", function () { playing = !playing; last = null; dirty = true; syncUI(); });
+  btnFx.addEventListener("click", function () { fx = !fx; dirty = true; syncUI(); });
+  scrub.addEventListener("input", function () { t = parseFloat(scrub.value) || 0.0; dirty = true; });
+  var ctrl = document.getElementById("controls"), hideTimer = null;
+  function showControls() { ctrl.classList.add("show"); clearTimeout(hideTimer); hideTimer = setTimeout(function () { ctrl.classList.remove("show"); }, 2500); }
+  document.addEventListener("pointermove", showControls);
+  if (reduce) ctrl.classList.add("show");
+  document.addEventListener("keydown", function (e) { if (e.code === "Space" && e.target === document.body) { e.preventDefault(); btnPlay.click(); } });
+
+  var fpsFrames = 0, fpsT0 = null, uiTick = 0;
+  function frame(now) {
+    if (playing) { if (last !== null) t = (t + Math.min(now - last, 100.0) / 1000.0) % LOOP; last = now; dirty = true; }
+    if (dirty) {
+      render(t, fx); dirty = false;
+      if ((uiTick++ % 6) === 0) { scrub.value = t.toFixed(2); outT.value = pad0(t.toFixed(2), 5) + "s"; }
+      fpsFrames++;
+    }
+    if (fpsT0 === null) fpsT0 = now;
+    if (now - fpsT0 >= 1000.0) { outFps.value = playing ? Math.round(fpsFrames * 1000.0 / (now - fpsT0)) + " fps" : "paused"; fpsFrames = 0; fpsT0 = now; }
+    requestAnimationFrame(frame);
+  }
+  function start() { drawStatic(); drawSprites(); syncUI(); requestAnimationFrame(frame); }
+  if (document.fonts && document.fonts.load) {
+    Promise.all([document.fonts.load('400 12px "B612 Mono"'), document.fonts.load('700 13px "B612 Mono"')]).then(start, start);
+  } else { start(); }
+})();
+</script>
+</body>
+</html>
