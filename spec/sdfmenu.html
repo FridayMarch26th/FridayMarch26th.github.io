@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SDF contour buttons</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,500;1,400;1,500&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a quiet instrument; a pen plot on paper, fine even lines, lots of air
+   IDEA: a figure from an old geometry text: circles, their level sets, italic labels
+   PICTURE: full-bleed WebGL distance field, iso-lines radiating from smooth-unioned circles
+   COLOUR and TYPE: grained off-white stock, blue-black ink, red pen on hover; STIX Two italic
+   LAYOUT: demo toggle and ruled options legend top right, caption at the foot */
+:root{color-scheme:light;--bg:#efeae0;--ink:#23232b;--mute:#6d6860;--red:#c8322a;--rule:rgba(35,35,43,.4);--pen:rgba(35,35,43,.5)}
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font:400 15px/1.4 "STIX Two Text","Times New Roman",serif}
+canvas#gl{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:crosshair}
+#layer{position:fixed;inset:0;pointer-events:none}
+.btn{position:absolute;left:0;top:0;display:flex;align-items:center;justify-content:center;border-radius:50%;
+  font-style:italic;font-size:24px;line-height:1;padding-bottom:3px;color:var(--ink);white-space:nowrap;user-select:none;
+  pointer-events:auto;cursor:grab;touch-action:none;transform-origin:50% 50%;outline:none}
+.btn.hov{color:var(--red)}
+.btn.drag{cursor:grabbing}
+.btn.scaling{cursor:nwse-resize}
+.btn:focus-visible{outline:0.8px dashed var(--pen);outline-offset:6px}
+header{position:fixed;top:16px;left:16px;right:16px;display:flex;gap:12px;align-items:flex-start;justify-content:flex-end;pointer-events:none}
+details{pointer-events:auto;border:0.8px solid var(--rule);width:auto;flex:none;background:rgba(239,234,224,.55)}
+summary{list-style:none;cursor:pointer;padding:10px 16px;display:flex;gap:14px;justify-content:space-between;min-height:44px;align-items:center;font-size:15px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";color:var(--mute)}
+details[open]{width:236px}
+details[open] summary{border-bottom:0.8px solid var(--rule);margin:0 14px;padding-inline:0}
+details[open] summary::after{content:"–"}
+.ctl{padding:6px 14px 12px}
+.row{display:grid;grid-template-columns:1fr auto;gap:0 8px;margin-top:6px;font-size:14px}
+.row span{color:var(--mute)}
+.row output{font-variant-numeric:tabular-nums lining-nums;text-align:right}
+input[type=range]{grid-column:1/-1;width:100%;margin:2px 0 0;height:18px;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-runnable-track{height:0.8px;background:var(--pen)}
+input[type=range]::-moz-range-track{height:0.8px;background:var(--pen)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:10px;height:10px;margin-top:-4.6px;border-radius:50%;border:0.9px solid var(--pen);background:var(--bg)}
+input[type=range]::-moz-range-thumb{width:9px;height:9px;border-radius:50%;border:0.9px solid var(--pen);background:var(--bg)}
+input:focus-visible{outline:0.8px dashed var(--pen);outline-offset:3px}
+#hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);color:var(--mute);font-size:13px;white-space:nowrap;pointer-events:none}
+#hint i{color:var(--ink)}
+#empty{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;color:var(--mute);font-style:italic;font-size:17px;opacity:0;transition:opacity .4s}
+#empty.on{opacity:1}
+#nogl{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:24px;text-align:center}
+.right{display:flex;gap:10px;align-items:flex-start;pointer-events:none}
+#demo{pointer-events:auto;font:inherit;font-size:15px;color:var(--ink);background:rgba(239,234,224,.55);border:0.8px solid var(--rule);border-radius:0;padding:0 16px;min-height:44px;cursor:pointer}
+#demo:hover{background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(35,35,43,.12) 3px 3.8px)}
+#demo[aria-pressed=true]{color:var(--red);border-color:rgba(200,50,42,.6);background:repeating-linear-gradient(135deg,transparent 0 3px,rgba(200,50,42,.18) 3px 3.8px)}
+#demo:focus-visible{outline:0.8px dashed var(--pen);outline-offset:3px}
+#cursor{position:fixed;left:0;top:0;width:30px;height:30px;margin:-15px 0 0 -15px;color:var(--ink);pointer-events:none;opacity:0;transition:opacity .3s,color .15s;z-index:5}
+#cursor.on{opacity:1}
+#cursor.down{color:var(--red)}
+#cursor.down svg{transform:scale(.8)}
+@media(max-width:700px){details[open]{width:190px}#hint{white-space:normal;text-align:center;width:calc(100vw - 32px)}}
+</style>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<div id="layer"></div>
+<div id="empty">An empty figure. Click, or drag out a radius, to place a circle.</div>
+<header>
+  <div class="right">
+  <button id="demo" type="button" aria-pressed="false">Demo</button>
+  <details id="panel">
+    <summary>Options</summary>
+    <div class="ctl" id="ctl"></div>
+  </details>
+  </div>
+</header>
+<div id="cursor" aria-hidden="true"><svg width="30" height="30" viewBox="-15 -15 30 30"><circle r="5" fill="none" stroke="currentColor" stroke-width="0.9"/><path d="M-11 0h7M4 0h7M0 -11v7M0 4v7" stroke="currentColor" stroke-width="0.9"/></svg></div>
+<div id="hint"><i>Drag</i> to move · <i>drag the rim</i> to scale · <i>click</i> to open · <i>click or drag the field</i> to add · <i>right-click</i> to remove · <i>Esc</i> to go back · <i>D</i> for demo</div>
+<div id="nogl">This prototype needs WebGL2, which this browser didn't provide.</div>
+<script>
+{
+const MAX = 26;
+const cv = document.getElementById('gl');
+const layer = document.getElementById('layer');
+const emptyEl = document.getElementById('empty');
+const EMPTY_TXT = emptyEl.textContent;
+const gl = cv.getContext('webgl2', {antialias:false});
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const P = {spacing:14.0, blend:70.0, reach:460.0, drift:reduce ? 0.0 : 0.3, major:5.0, hatch:4.0};
+const CTL = [
+  ['spacing','Line spacing',6,48,1,'px'],
+  ['blend','Blend (smooth min)',0,200,1,'px'],
+  ['reach','Falloff reach',80,1500,10,'px'],
+  ['drift','Drift',-1.5,1.5,0.05,'lines/s'],
+  ['major','Major line every',0,10,1,''],
+  ['hatch','Hatch pitch',2,10,0.5,'px'],
+];
+document.getElementById('ctl').innerHTML = CTL.map(([k,l,mn,mx,st]) =>
+  `<label class="row" for="c-${k}"><span>${l}</span><output id="o-${k}"></output>
+   <input id="c-${k}" type="range" min="${mn}" max="${mx}" step="${st}" value="${P[k]}"></label>`).join('');
+for (const [k,,,,st,u] of CTL) {
+  const inp = document.getElementById('c-'+k), out = document.getElementById('o-'+k);
+  const show = () => { out.textContent = (k==='major' && P[k]===0) ? 'off' : (st<1 ? P[k].toFixed(2) : P[k]) + (u ? ' '+u : ''); };
+  inp.addEventListener('input', () => { P[k] = parseFloat(inp.value); show(); });
+  show();
+}
+
+const rand = (a,b) => a + Math.random()*(b-a);
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const lerp = (a,b,t) => a + (b-a)*t;
+const ease = k => k < 0.5 ? 4.0*k*k*k : 1.0 - ((-2.0*k + 2.0)**3)/2.0;
+const back = k => { const c = 1.6; return 1.0 + (c+1.0)*((k-1.0)**3) + c*((k-1.0)**2); };
+
+const LETTERS = 'abcdefghijklmnopqrstuvwxyz'.split('');
+const RAD = 28.0;
+
+function makeScreen(name, parent){ return {name, parent, buttons:[]}; }
+function pickLabel(scr){
+  const used = new Set(scr.buttons.map(b => b.label));
+  return LETTERS.find(l => !used.has(l)) || '';
+}
+function newButton(scr, x, y){
+  const b = {label:pickLabel(scr), x, y, ax:null, ay:null, zr:null, lab:null, r:RAD, s:1.0, child:null, el:null};
+  scr.buttons.push(b);
+  return b;
+}
+function seed(scr, n){
+  const W = innerWidth, H = innerHeight;
+  for (let i = 0; i < n; i++) {
+    let x = 0.5, y = 0.5;
+    for (let t = 0; t < 80; t++) {
+      x = rand(0.32, 0.68); y = rand(0.32, 0.68);
+      if (scr.buttons.every(o => Math.hypot((o.x-x)*W, (o.y-y)*H) > o.r + RAD + 110.0)) break;
+    }
+    newButton(scr, x, y);
+  }
+}
+/* three children spread round the point they will burst from */
+function placeChildren(scr, cx, cy){
+  const W = innerWidth, H = innerHeight, base = Math.random()*Math.PI*2.0;
+  const dist = rand(150.0, 200.0) * Math.min(1.0, Math.min(W, H)/640.0);
+  for (let i = 0; i < 3; i++) {
+    const a = base + i*Math.PI*2.0/3.0 + rand(-0.3, 0.3);
+    newButton(scr, clamp(cx + Math.cos(a)*dist/W, 0.08, 0.92), clamp(cy + Math.sin(a)*dist/H, 0.12, 0.88));
+  }
+}
+
+let root, cur, hoverB = null, flood = 0.0, busy = false;
+
+const tweens = [];
+function tween(ms, fn, done){ tweens.push({t0:performance.now(), ms, fn, done}); }
+
+function setHover(b){ hoverB = b; }
+
+const PAD = 10.0;  /* the hit area reaches PAD past the drawn edge, so the rim can be grabbed from either side */
+function rimHit(b, e){
+  const rc = b.el.getBoundingClientRect();
+  const d = Math.hypot(e.clientX - (rc.left + rc.width/2.0), e.clientY - (rc.top + rc.height/2.0));
+  return Math.abs(d - b.r) <= PAD;
+}
+function elFor(b){
+  if (b.el) return b.el;
+  const el = document.createElement('div');
+  el.className = 'btn'; el.tabIndex = 0; el.setAttribute('role','button');
+  el.textContent = b.label;
+  let sx = 0, sy = 0, ox = 0, oy = 0, mode = null, moved = false, down = false;
+  el.addEventListener('pointerdown', e => {
+    if (busy || e.button !== 0) return;
+    down = true; moved = false; sx = e.clientX; sy = e.clientY;
+    mode = rimHit(b, e) ? 'scale' : 'move';
+    ox = e.clientX - b.x*innerWidth; oy = e.clientY - b.y*innerHeight;
+    el.setPointerCapture(e.pointerId);
+    if (mode === 'scale') el.classList.add('scaling');
+  });
+  el.addEventListener('pointermove', e => {
+    if (!down) { el.style.cursor = (!busy && rimHit(b, e)) ? 'nwse-resize' : ''; return; }
+    if (!moved && Math.hypot(e.clientX-sx, e.clientY-sy) > 4) { moved = true; if (mode === 'move') el.classList.add('drag'); }
+    if (!moved) return;
+    if (mode === 'move') {
+      b.x = clamp((e.clientX - ox)/innerWidth, 0.0, 1.0);
+      b.y = clamp((e.clientY - oy)/innerHeight, 0.0, 1.0);
+    } else {
+      b.r = clamp(Math.hypot(e.clientX - b.x*innerWidth, e.clientY - b.y*innerHeight), 14.0, 220.0);
+    }
+  });
+  const up = e => {
+    if (!down) return;
+    down = false; el.classList.remove('drag', 'scaling');
+    if (!moved && mode === 'move' && e.type === 'pointerup') enter(b);
+    moved = false; mode = null;
+  };
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+  el.addEventListener('pointerenter', () => { if (!busy) setHover(b); });
+  el.addEventListener('pointerleave', () => { if (hoverB === b) setHover(null); });
+  el.addEventListener('focus', () => { if (!busy) setHover(b); });
+  el.addEventListener('blur', () => { if (hoverB === b) setHover(null); });
+  el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); enter(b); } });
+  el.addEventListener('contextmenu', e => { e.preventDefault(); removeButton(b); });
+  b.el = el;
+  return el;
+}
+
+function setScreen(scr){
+  cur = scr; setHover(null);
+  layer.replaceChildren(...scr.buttons.map(elFor));
+  updateEmpty();
+}
+function updateEmpty(){ emptyEl.classList.toggle('on', cur.buttons.length === 0); }
+
+function popIn(list, then){
+  const step = 90, dur = 380;
+  list.forEach(b => b.s = 0.0);
+  if (!list.length) { then && then(); return; }
+  list.forEach((b, i) => {
+    tween(dur + i*step, k => { const t = clamp((k*(dur + i*step) - i*step)/dur, 0.0, 1.0); b.s = back(t); },
+      i === list.length-1 ? then : null);
+  });
+}
+
+/* children fly out of (fx, fy), overshooting slightly, so they bud off the parent through the smooth min */
+function burst(kids, fx, fy, done){
+  const dur = 640, st = 80;
+  kids.forEach(c => { c.s = 0.0; c.ax = fx; c.ay = fy; });
+  if (!kids.length) { done && done(); return; }
+  kids.forEach((c, i) => {
+    const tot = dur + i*st;
+    tween(tot, k => {
+      const t = clamp((k*tot - i*st)/dur, 0.0, 1.0), e = back(t);
+      c.ax = lerp(fx, c.x, e); c.ay = lerp(fy, c.y, e); c.s = ease(Math.min(1.0, t*1.8));
+    }, () => { c.ax = c.ay = null; c.s = 1.0; if (i === kids.length-1 && done) done(); });
+  });
+}
+
+const cover = () => Math.hypot(innerWidth, innerHeight)*0.55 + 60.0;
+
+function enter(b){
+  if (busy) return;
+  busy = true; setHover(null);
+  const others = cur.buttons.filter(o => o !== b);
+  const x0 = b.x, y0 = b.y, R = cover();
+  /* dive in: siblings shrink away while the chosen circle centres and swells past the edges of the sheet */
+  tween(620, k => {
+    const e = ease(k);
+    b.ax = lerp(x0, 0.5, e); b.ay = lerp(y0, 0.5, e); b.zr = lerp(b.r, R, e);
+    b.lab = 1.0 - Math.min(1.0, e*3.0);
+    others.forEach(o => o.s = 1.0 - e);
+  }, () => {
+    others.forEach(o => o.s = 1.0);
+    b.ax = b.ay = b.zr = b.lab = null;
+    if (!b.child) { b.child = makeScreen(b.label, cur); placeChildren(b.child, 0.5, 0.5); }
+    setScreen(b.child);
+    /* now inside: the hatching clears and three children bud out from the centre */
+    flood = 1.0;
+    /* a long, gentle fade: smoothstep has half the peak rate of the cubic in-out, and the hatching lingers a moment first */
+    tween(1100, k => { const t = clamp((k - 0.08)/0.92, 0.0, 1.0); flood = 1.0 - t*t*(3.0 - 2.0*t); });
+    burst(cur.buttons.slice(), 0.5, 0.5, () => { busy = false; });
+  });
+}
+
+function goBack(target){
+  if (busy || !target || target === cur) return;
+  busy = true; setHover(null);
+  let s = cur; while (s.parent !== target) s = s.parent;
+  const b = target.buttons.find(x => x.child === s);
+  const kids = cur.buttons.slice(), R = cover();
+  /* children fall back to the centre as the hatching closes over the sheet */
+  tween(520, k => {
+    const e = ease(k);
+    kids.forEach(c => { c.ax = lerp(c.x, 0.5, e); c.ay = lerp(c.y, 0.5, e); c.s = 1.0 - ease(clamp((k-0.4)/0.6, 0.0, 1.0)); });
+    { const t = clamp((k - 0.15)/0.85, 0.0, 1.0); flood = t*t*(3.0 - 2.0*t); }
+  }, () => {
+    kids.forEach(c => { c.ax = c.ay = null; c.s = 1.0; });
+    setScreen(target);
+    flood = 0.0;
+    const others = target.buttons.filter(o => o !== b);
+    others.forEach(o => o.s = 0.0);
+    /* then we pull back out: the parent shrinks from the whole sheet to its place */
+    tween(600, k => {
+      const e = ease(k);
+      b.ax = lerp(0.5, b.x, e); b.ay = lerp(0.5, b.y, e); b.zr = lerp(R, b.r, e);
+      b.lab = clamp((k-0.65)/0.35, 0.0, 1.0);
+      others.forEach(o => o.s = e);
+    }, () => { b.ax = b.ay = b.zr = b.lab = null; busy = false; });
+  });
+}
+
+function removeButton(b){
+  if (busy) return;
+  const scr = cur;
+  if (hoverB === b) setHover(null);
+  b.el.style.pointerEvents = 'none';
+  const s0 = b.s;
+  tween(240, k => { b.s = s0*(1.0 - ease(k)); }, () => {
+    const i = scr.buttons.indexOf(b); if (i >= 0) scr.buttons.splice(i, 1);
+    b.el.remove(); updateEmpty();
+  });
+}
+
+/* press on the field to place a circle; drag out to set its radius, or just click for the default size */
+let making = null;
+cv.addEventListener('pointerdown', e => {
+  if (busy || e.button !== 0) return;
+  if (cur.buttons.length >= MAX) {
+    emptyEl.textContent = `This figure is full (${MAX} circles).`; emptyEl.classList.add('on');
+    setTimeout(() => { emptyEl.textContent = EMPTY_TXT; updateEmpty(); }, 1400); return;
+  }
+  const b = newButton(cur, e.clientX/innerWidth, e.clientY/innerHeight);
+  b.r = 14.0; b.s = 1.0;
+  layer.append(elFor(b));
+  updateEmpty();
+  making = {b, sx:e.clientX, sy:e.clientY, moved:false};
+  cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove', e => {
+  if (!making) return;
+  const d = Math.hypot(e.clientX - making.sx, e.clientY - making.sy);
+  if (d > 6.0) making.moved = true;
+  if (making.moved) making.b.r = clamp(d, 14.0, 220.0);
+});
+const endMake = () => {
+  if (!making) return;
+  const b = making.b;
+  if (!making.moved) { b.r = RAD; popIn([b]); }
+  making = null;
+};
+cv.addEventListener('pointerup', endMake);
+cv.addEventListener('pointercancel', endMake);
+cv.addEventListener('contextmenu', e => e.preventDefault());
+addEventListener('keydown', e => { if (e.key === 'Escape' && cur && cur.parent && !demo) goBack(cur.parent); });
+
+/* ---------- demo mode: a scripted hand that drags, scales, adds, dives in and climbs back out ---------- */
+const demoBtn = document.getElementById('demo');
+const curEl = document.getElementById('cursor');
+const STOP = {};
+let demo = false, cx = innerWidth*0.5, cy = innerHeight*0.62;
+const wait = ms => new Promise((res, rej) => setTimeout(() => demo ? res() : rej(STOP), ms));
+const anim = (ms, fn) => new Promise((res, rej) => tween(ms, k => { if (demo) fn(k); }, () => demo ? res() : rej(STOP)));
+async function idle(){ while (busy) await wait(40); }
+function setCur(x, y){ cx = x; cy = y; curEl.style.transform = `translate(${x}px, ${y}px)`; }
+function press(on){ curEl.classList.toggle('down', on); }
+async function moveTo(x, y, ms){
+  const x0 = cx, y0 = cy, d = Math.hypot(x-x0, y-y0);
+  ms = ms ?? clamp(300.0 + d*1.1, 350.0, 1100.0);
+  await anim(ms, k => { const e = ease(k); setCur(lerp(x0, x, e), lerp(y0, y, e)); });
+}
+const px = b => [b.x*innerWidth, b.y*innerHeight];
+const pick = a => a[Math.floor(Math.random()*a.length)];
+function spot(margin){
+  const W = innerWidth, H = innerHeight, m = margin ?? 110.0;
+  for (let t = 0; t < 60; t++) {
+    const x = rand(0.22, 0.78), y = rand(0.24, 0.76);
+    if (cur.buttons.every(o => Math.hypot((o.x-x)*W, (o.y-y)*H) > o.r + m)) return [x, y];
+  }
+  return [rand(0.25, 0.75), rand(0.28, 0.72)];
+}
+
+async function demoDrag(b, tx, ty){
+  const [bx, by] = px(b);
+  await moveTo(bx, by); setHover(b); press(true); await wait(160);
+  const x0 = b.x, y0 = b.y;
+  await anim(clamp(500.0 + Math.hypot((tx-x0)*innerWidth, (ty-y0)*innerHeight)*1.6, 700.0, 1600.0), k => {
+    const e = ease(k); b.x = lerp(x0, tx, e); b.y = lerp(y0, ty, e); setCur(b.x*innerWidth, b.y*innerHeight);
+  });
+  press(false); setHover(null); await wait(250);
+}
+async function demoScale(b, r1){
+  const a = rand(-0.9, -0.2), [bx, by] = px(b);
+  await moveTo(bx + Math.cos(a)*b.r, by + Math.sin(a)*b.r); press(true); await wait(140);
+  const r0 = b.r;
+  await anim(900, k => { const r = lerp(r0, r1, ease(k)); b.r = r; setCur(b.x*innerWidth + Math.cos(a)*r, b.y*innerHeight + Math.sin(a)*r); });
+  press(false); await wait(250);
+}
+async function demoAdd(){
+  if (cur.buttons.length >= 7) return;
+  const [x, y] = spot(130.0), W = innerWidth, H = innerHeight;
+  await moveTo(x*W, y*H); press(true); await wait(120);
+  const b = newButton(cur, x, y); b.r = 14.0; layer.append(elFor(b)); updateEmpty();
+  const r1 = rand(30.0, 62.0), a = rand(0.0, Math.PI*2.0);
+  await anim(800, k => { const r = lerp(14.0, r1, ease(k)); b.r = r; setCur(x*W + Math.cos(a)*r, y*H + Math.sin(a)*r); });
+  press(false); await wait(300);
+}
+async function demoRemove(){
+  if (cur.buttons.length <= 3) return;
+  const b = pick(cur.buttons), [bx, by] = px(b);
+  await moveTo(bx, by); setHover(b); await wait(250); removeButton(b); await wait(450);
+}
+async function demoEnter(){
+  const b = pick(cur.buttons); if (!b) return;
+  const [bx, by] = px(b);
+  await moveTo(bx, by); setHover(b); press(true); await wait(150); press(false);
+  enter(b); await idle(); await wait(500);
+}
+async function demoBack(){
+  if (!cur.parent) return;
+  await wait(250);
+  goBack(cur.parent); await idle(); await wait(500);
+}
+async function demoBlend(){
+  if (cur.buttons.length < 2) return;
+  const [a, b] = cur.buttons.slice().sort(() => Math.random() - 0.5);
+  const x0 = a.x, y0 = a.y, ang = Math.atan2((a.y-b.y)*innerHeight, (a.x-b.x)*innerWidth);
+  const gap = (a.r + b.r)*0.85;
+  await demoDrag(a, b.x + Math.cos(ang)*gap/innerWidth, b.y + Math.sin(ang)*gap/innerHeight);
+  await wait(500);
+  await demoDrag(a, x0, y0);
+}
+
+async function runDemo(){
+  curEl.classList.add('on'); setCur(cx, cy);
+  try {
+    await idle();
+    let here = null, count = 0;
+    while (demo) {
+      if (cur !== here) { here = cur; count = 0; }
+      count++;
+      const depth = (() => { let n = 0; for (let s = cur; s.parent; s = s.parent) n++; return n; })();
+      const acts = [demoBlend, demoBlend, demoAdd, demoEnter];
+      if (cur.buttons.length) acts.push(() => demoScale(pick(cur.buttons), rand(26.0, 70.0)));
+      if (cur.buttons.length) acts.push(() => { const b = pick(cur.buttons), [x, y] = spot(); return demoDrag(b, x, y); });
+      if (cur.buttons.length > 4) acts.push(demoRemove);
+      if (depth >= 1) acts.push(demoBack, demoBack);
+      if (depth >= 2 || (depth >= 1 && count > 4)) { await demoBack(); continue; }
+      if (!cur.buttons.length) { await demoAdd(); continue; }
+      await pick(acts)();
+      await wait(350);
+    }
+  } catch (err) { if (err !== STOP) console.error(err); }
+  press(false); setHover(null); curEl.classList.remove('on');
+}
+function setDemo(on){
+  if (on === demo) return;
+  demo = on;
+  demoBtn.setAttribute('aria-pressed', String(on));
+  demoBtn.textContent = on ? 'Stop demo' : 'Demo';
+  if (on) runDemo();
+}
+demoBtn.addEventListener('click', () => setDemo(!demo));
+/* any real touch on the sheet hands control back */
+addEventListener('pointerdown', e => { if (demo && e.isTrusted && !e.target.closest('header')) setDemo(false); }, true);
+addEventListener('keydown', e => {
+  if ((e.key === 'd' || e.key === 'D') && !e.target.closest('input')) setDemo(!demo);
+  else if (demo && e.key === 'Escape') setDemo(false);
+});
+
+
+/* paper stock, the same recipe as the edge bundling sheet */
+function makePaper(){
+  const T = 384, c = document.createElement('canvas'); c.width = c.height = T; const g = c.getContext('2d');
+  g.fillStyle = '#efeae0'; g.fillRect(0, 0, T, T);
+  const id = g.getImageData(0, 0, T, T), d = id.data;
+  for (let i = 0; i < d.length; i += 4) { const n = (Math.random()-0.5)*16.0; d[i] += n; d[i+1] += n; d[i+2] += n*0.95; }
+  g.putImageData(id, 0, 0);
+  g.strokeStyle = 'rgba(120,100,70,.07)'; g.lineWidth = 0.6;
+  for (let i = 0; i < 18; i++) {
+    const x = Math.random()*T, y = Math.random()*T, a = Math.random()*Math.PI, l = 4.0 + Math.random()*14.0;
+    g.beginPath(); g.moveTo(x, y);
+    g.quadraticCurveTo(x + Math.cos(a+0.6)*l/2.0, y + Math.sin(a+0.6)*l/2.0, x + Math.cos(a)*l, y + Math.sin(a)*l); g.stroke();
+  }
+  return c;
+}
+
+const VS = `#version 300 es
+void main(){ vec2 p = vec2(float((gl_VertexID<<1)&2), float(gl_VertexID&2)); gl_Position = vec4(p*2.0-1.0, 0.0, 1.0); }`;
+const FS = `#version 300 es
+precision highp float;
+out vec4 o;
+uniform sampler2D uPaper;
+uniform vec2 uRes; uniform int uCount; uniform vec3 uCirc[${MAX}]; uniform float uHl[${MAX}];
+uniform float uK, uSp, uFall, uTime, uDrift, uMajor, uFlood, uDpr, uHatch;
+float smin(float a, float b, float k){
+  if (k <= 0.0) return min(a, b);
+  float h = max(k - abs(a - b), 0.0) / k;
+  return min(a, b) - h*h*k*0.25;
+}
+void main(){
+  vec2 p = gl_FragCoord.xy;
+  float d = 1e5, dh = 1e5;
+  for (int i = 0; i < ${MAX}; i++){
+    if (i >= uCount) break;
+    float di = length(p - uCirc[i].xy) - uCirc[i].z;
+    d = smin(d, di, uK);
+    if (uHl[i] > 0.5) dh = smin(dh, di, uK);
+  }
+  float fw = max(fwidth(d), 1e-3);
+  /* smooth min bends the field, so |grad d| drifts away from 1; dividing by it turns
+     field distance into true screen distance, keeping every line the same width */
+  float grad = max(length(vec2(dFdx(d), dFdy(d))), 1e-3);
+  float dpx = d / grad;
+  vec3 ink = vec3(0.137, 0.137, 0.169), red = vec3(0.784, 0.196, 0.165);
+
+  /* paper: tiled grain at css-pixel scale, warm vignette */
+  vec3 col = texture(uPaper, p / (384.0*uDpr)).rgb;
+  vec2 uv = p / uRes - 0.5;
+  col = mix(col, vec3(0.43, 0.35, 0.235), 0.09 * smoothstep(0.2, 0.75, length(uv * vec2(uRes.x/uRes.y, 1.0)) ));
+  vec3 base = col;
+
+  /* level sets of the union, in ink */
+  if (uCount > 0) {
+    float sp = uSp * uDpr;
+    float dd = max(d, 0.0);
+    float t = dd/sp - uTime*uDrift;
+    float idx = floor(t + 0.5);
+    float g = abs(t - idx) * sp / grad;
+    float major = (uMajor > 0.5 && mod(idx, uMajor) < 0.5) ? 1.0 : 0.0;
+    float hw = 0.45 * uDpr;
+    float ln = 1.0 - smoothstep(hw - 0.5, hw + 0.5, g);
+    float fall = exp(-dd / (uFall * uDpr));
+    float dens = clamp((sp/grad - 2.0) / 2.0, 0.0, 1.0);
+    col = mix(col, ink, ln * fall * dens * mix(0.28, 0.6, major) * step(0.0, d));
+  }
+
+  /* hatching for the interior, fixed to the sheet at 135 degrees */
+  float hs = (p.x + p.y) / (uDpr * 1.41421);
+  float hg = abs(fract(hs/uHatch + 0.5) - 0.5) * uHatch;
+  float hl = 1.0 - smoothstep(0.35, 0.35 + 1.0/uDpr, hg);
+  /* the hovered blob: the whole group the hovered circle belongs to, rim included */
+  float hov = 1.0 - smoothstep(1.5*uDpr, 3.0*uDpr, dh / grad);
+  vec3 pen = mix(ink, red, hov);
+  float inside = 1.0 - smoothstep(-0.5, 0.5, dpx);
+  col = mix(col, pen, hl * mix(0.16, 0.3, hov) * inside);
+
+  /* outline of the union */
+  float ow = 0.65 * uDpr;
+  float ol = 1.0 - smoothstep(ow - 0.5, ow + 0.5, abs(dpx));
+  col = mix(col, pen, ol * 0.85 * (uCount > 0 ? 1.0 : 0.0));
+
+  /* transition: the whole sheet becomes interior */
+  col = mix(col, mix(base, ink, hl*0.16), uFlood);
+  o = vec4(col, 1.0);
+}`;
+function sh(type, src){ const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+
+function start(){
+  root = makeScreen('Home', null);
+  seed(root, 3);
+  cur = root;
+  if (!gl) { document.getElementById('nogl').style.display = 'flex'; return; }
+  const prog = gl.createProgram();
+  gl.attachShader(prog, sh(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, sh(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+  const U = {}; for (const n of ['uPaper','uRes','uCount','uCirc','uHl','uK','uSp','uFall','uTime','uDrift','uMajor','uFlood','uDpr','uHatch']) U[n] = gl.getUniformLocation(prog, n);
+
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, makePaper());
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.uniform1i(U.uPaper, 0);
+
+  const circ = new Float32Array(MAX*3), hl = new Float32Array(MAX);
+  let dpr = 1;
+  const resize = () => { dpr = Math.min(devicePixelRatio || 1, 2); cv.width = Math.round(innerWidth*dpr); cv.height = Math.round(innerHeight*dpr); gl.viewport(0, 0, cv.width, cv.height); };
+  addEventListener('resize', resize); resize();
+  gl.bindVertexArray(gl.createVertexArray());
+
+  const frame = now => {
+    for (let i = tweens.length-1; i >= 0; i--) {
+      const tw = tweens[i]; const k = clamp((performance.now() - tw.t0)/tw.ms, 0.0, 1.0);
+      tw.fn(k);
+      if (k >= 1.0) { tweens.splice(i, 1); tw.done && tw.done(); }
+    }
+    const W = innerWidth, H = innerHeight;
+    const items = cur.buttons.map(b => ({b, x:(b.ax ?? b.x)*W, y:(b.ay ?? b.y)*H, s:b.s, lab:b.lab ?? b.s, r:(b.zr ?? b.r)*b.s}));
+    /* groups: two circles share one blob when the gap between their rims is under blend/2
+       (with polynomial smooth min, that is where the bridge between them closes) */
+    const m = items.length, par = items.map((_, i) => i);
+    const find = i => { while (par[i] !== i) { par[i] = par[par[i]]; i = par[i]; } return i; };
+    for (let i = 0; i < m; i++) for (let j = i+1; j < m; j++) {
+      const A = items[i], B = items[j];
+      if (A.r > 0.05 && B.r > 0.05 && Math.hypot(A.x-B.x, A.y-B.y) - A.r - B.r < P.blend*0.5) par[find(i)] = find(j);
+    }
+    const hiRoot = hoverB ? (() => { const i = items.findIndex(it => it.b === hoverB); return i < 0 ? -1 : find(i); })() : -1;
+    let n = 0;
+    items.forEach((it, i) => {
+      const {b, x, y, s, lab, r} = it;
+      const inHi = hiRoot >= 0 && find(i) === hiRoot;
+      /* a circle whose centre sits inside a larger one has been consumed: its letter drops to half strength */
+      let fade = 1.0;
+      for (const o of items) if (o !== it && o.r > r) {
+        const d = Math.hypot(o.x-x, o.y-y);
+        fade = Math.min(fade, 1.0 - 0.5*clamp((o.r - d)/Math.max(r, 1.0), 0.0, 1.0));
+      }
+      if (b.el) {
+        if (b._r !== b.r) {
+          b._r = b.r;
+          b.el.style.width = b.el.style.height = (2.0*(b.r + PAD)) + 'px';
+          b.el.style.fontSize = clamp(24.0*b.r/RAD, 13.0, 120.0) + 'px';
+        }
+        if (b._hi !== inHi) { b._hi = inHi; b.el.classList.toggle('hov', inHi); }
+        b.el.style.transform = `translate(${x - b.r - PAD}px, ${y - b.r - PAD}px) scale(${Math.max(s, 0.0)})`;
+        b.el.style.opacity = clamp(lab, 0.0, 1.0) * fade;
+      }
+      if (r <= 0.05 || n >= MAX) return;
+      circ[n*3] = x*dpr; circ[n*3+1] = (H - y)*dpr; circ[n*3+2] = r*dpr;
+      hl[n] = inHi ? 1.0 : 0.0;
+      n++;
+    });
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.uniform2f(U.uRes, cv.width, cv.height);
+    gl.uniform1i(U.uCount, n);
+    gl.uniform3fv(U.uCirc, circ);
+    gl.uniform1fv(U.uHl, hl);
+    gl.uniform1f(U.uK, P.blend*dpr);
+    gl.uniform1f(U.uSp, P.spacing);
+    gl.uniform1f(U.uFall, P.reach);
+    gl.uniform1f(U.uTime, now/1000.0);
+    gl.uniform1f(U.uDrift, P.drift);
+    gl.uniform1f(U.uMajor, P.major);
+    gl.uniform1f(U.uFlood, flood);
+    gl.uniform1f(U.uDpr, dpr);
+    gl.uniform1f(U.uHatch, P.hatch);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    requestAnimationFrame(frame);
+  };
+  setScreen(root);
+  popIn(root.buttons.slice());
+  requestAnimationFrame(frame);
+}
+/* wait briefly for the italic so circle sizes fit their labels */
+let started = false;
+const go = () => { if (!started) { started = true; start(); } };
+if (document.fonts && document.fonts.load) document.fonts.load('italic 17px "STIX Two Text"').then(go, go);
+setTimeout(go, 1200);
+}
+</script>
+</body>
+</html>
